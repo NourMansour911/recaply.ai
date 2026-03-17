@@ -17,6 +17,7 @@ base_dir = os.path.dirname(os.path.dirname(__file__))
 files_dir = os.path.join(base_dir,settings.FILES_PATH)
 database_dir = os.path.join(base_dir,settings.DATABASES_PATH)
 
+
 def get_database_path(db_name: str):
         database_path = os.path.join(
             database_dir, db_name
