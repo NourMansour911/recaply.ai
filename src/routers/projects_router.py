@@ -16,12 +16,12 @@ project_router = APIRouter(
 
 
 
-@project_router.get("",description="Retrieve all projects for the tenant")
-async def get_projects(tenant_id: str = Depends(get_tenant_id)):
+@project_router.get("",description="List all projects for the tenant")
+async def list_projects(tenant_id: str = Depends(get_tenant_id)):
     pass
 
 
-@project_router.get("/{project_id}",description="Retrieve details of specofoc project") 
+@project_router.get("/{project_id}",description="Retrieve details of specific project (tenant-scoped)") 
 async def get_project_info(tenant_id: str = Depends(get_tenant_id)):
     pass
 
