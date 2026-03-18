@@ -4,7 +4,7 @@ from bson.objectid import ObjectId
 from datetime import datetime
 class ProjectModel(BaseModel):
     iid: Optional[ObjectId] = Field(None, alias="_id")
-    tenant_iid: ObjectId
+    tenant_id: ObjectId
     project_name: str = Field(...,min_length=1)
     project_pushed_at: datetime = Field(default=datetime.now())
     
@@ -30,5 +30,12 @@ class ProjectModel(BaseModel):
                 ],
                 "name": "project_name_index_1",
                 "unique": True
+            },
+            {
+                "key": [
+                    ("tenant_id", 1)
+                ],
+                "name": "tenant_id_index_1",
+                "unique": False
             }
         ]

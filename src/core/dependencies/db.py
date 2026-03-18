@@ -1,4 +1,4 @@
 from fastapi import Request
-
-def get_db_client(request: Request):
+from motor.motor_asyncio import AsyncIOMotorClient
+def get_db_client(request: Request) -> AsyncIOMotorClient :
         return request.app.db_client

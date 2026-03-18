@@ -4,7 +4,7 @@ from bson.objectid import ObjectId
 from datetime import datetime
 class ChunkModel(BaseModel):
     iid: Optional[ObjectId] = Field(None, alias="_id")
-    chunk_tenant_iid: ObjectId
+    chunk_tenant_id: ObjectId
     chunk_project_iid: ObjectId
     chunk_file_iid: Optional[ObjectId]
     chunk_file_name: Optional[str]

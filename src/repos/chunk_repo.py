@@ -4,11 +4,13 @@ from helpers.enums import DBEnum
 from bson.objectid import ObjectId
 from pymongo import InsertOne
 from fastapi import Depends
+from motor.motor_asyncio import AsyncIOMotorClient
+from core.dependencies import get_db_client
 
 class ChunkRepo():
 
-    def __init__(self, db_client: object):
-        super().__init__(db_client=db_client)
+    def __init__(self, db_client = Depends(get_db_client)):
+        self.db_client = db_client
         self.collection = self.db_client[DBEnum.COLLECTION_CHUNK_NAME.value]
         
         
