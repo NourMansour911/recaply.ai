@@ -7,7 +7,7 @@ from core.dependencies import get_tenant_id
 
 logger = get_logger(__name__)
 
-project_router = APIRouter(
+projects_route = APIRouter(
     prefix="/api/projects",
     tags=["api_v1", "projects", "admin"],
 )
@@ -16,16 +16,16 @@ project_router = APIRouter(
 
 
 
-@project_router.get("",description="List all projects for the tenant")
+@projects_route.get("",description="List all projects for the tenant")
 async def list_projects(tenant_id: str = Depends(get_tenant_id)):
     pass
 
 
-@project_router.get("/{project_id}",description="Retrieve details of specific project (tenant-scoped)") 
+@projects_route.get("/{project_id}",description="Retrieve details of specific project (tenant-scoped)") 
 async def get_project_info(tenant_id: str = Depends(get_tenant_id)):
     pass
 
-@project_router.delete("/{project_id}",description="Delete a project along with all files, chunks, chains and summaries (tenant-scoped)")
+@projects_route.delete("/{project_id}",description="Delete a project along with all files, chunks, chains and summaries (tenant-scoped)")
 async def delete_project(tenant_id: str = Depends(get_tenant_id)):
     pass
 

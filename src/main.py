@@ -5,7 +5,7 @@ from core.settings import settings
 from core import app_exception_handler
 from core.exceptions import AppException
 from contextlib import asynccontextmanager
-from routers import project_router
+from routers import routers
 
 
 @asynccontextmanager
@@ -45,4 +45,5 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(project_router)
+for router in routers:
+    app.include_router(router)
