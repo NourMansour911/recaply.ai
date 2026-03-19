@@ -24,7 +24,7 @@ async def list_project_files(project_id: str,files: List[UploadFile]= File(...),
     pass
 
 @files_route.delete("/{file_id}",description="Delete a file and all associated chunks (project-scoped)")
-async def delete_project(tenant_id: str = Depends(get_tenant_id)):
+async def delete_file(tenant_id: str = Depends(get_tenant_id)):
     pass
 
 

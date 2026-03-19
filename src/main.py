@@ -1,8 +1,7 @@
 # from routers import base,files
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
-from core.settings import settings
-from core import app_exception_handler
+from core import app_exception_handler,get_settings
 from core.exceptions import AppException
 from contextlib import asynccontextmanager
 from routers import routers
@@ -15,8 +14,8 @@ async def lifespan(app: FastAPI):
   app.add_exception_handler(AppException, app_exception_handler)
   
   # MongoDB client
-  app.client = AsyncIOMotorClient(settings.MONGODB_URL)
-  app.db_client = app.client[settings.MONGODB_DATABASE]
+  app.client = AsyncIOMotorClient(get_settings.MONGODB_URL)
+  app.db_client = app.client[get_settings.MONGODB_DATABASE]
 
 #   # Vector DB client
 #   vdb_provider_factory = VectorDBFactory(settings)
