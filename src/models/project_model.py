@@ -5,7 +5,7 @@ from datetime import datetime
 class ProjectModel(BaseModel):
     iid: Optional[ObjectId] = Field(None, alias="_id")
     tenant_id: ObjectId
-    project_name: str = Field(...,min_length=1)
+    project_id: str = Field(...,min_length=1)
     project_pushed_at: datetime = Field(default=datetime.now())
     
     @field_validator("project_name")
