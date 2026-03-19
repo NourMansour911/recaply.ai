@@ -42,7 +42,7 @@ class FileValidator:
             logger.error("File has no name")
             raise EmptyFileException()
 
-        # Check not empty
+        
         chunk = await file.read(1024)
         if not chunk:
             logger.error("Empty file uploaded")
