@@ -3,7 +3,7 @@ from fastapi import APIRouter, UploadFile, Request,File,Depends
 from typing import List
 
 from helpers import get_logger
-from core.dependencies import get_tenant_id
+from core import get_tenant_id
 
 logger = get_logger(__name__)
 

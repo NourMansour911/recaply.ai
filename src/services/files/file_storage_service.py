@@ -17,7 +17,7 @@ class FileStorageService:
         file_name = re.sub(r"[^\w.]", "_", original_filename).lower()
         unique_name = f"{uuid.uuid4()}_{file_name}"
         file_path = os.path.join(project_path, unique_name)
-        return file_path, unique_name, original_filename
+        return file_path, original_filename
 
     async def save_file(self, file: UploadFile, file_path: str):
         try:
@@ -27,6 +27,6 @@ class FileStorageService:
             logger.info("File saved successfully", extra={"file_path": file_path})
         except Exception as e:
             logger.error("Error saving file", exc_info=True, extra={"file_path": file_path})
-            raise UploadFailedException(f"Error saving file: {e}")
+            raise UploadFailedException(file_name=file.filename, message=f"Error saving file: {e}")
         finally:
             await file.seek(0)

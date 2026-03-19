@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from functools import lru_cache
 
 class Settings(BaseSettings):
     
@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     MAX_TEXT_SIZE_MB: int 
     MAX_SUBTITLE_SIZE_MB: int
     MAX_PDF_SIZE_MB: int
+    
+    TO_BYTES: int
 
     
     class Config:
@@ -33,6 +35,8 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
-        
-        
-get_settings  = Settings()
+
+
+
+def get_settings() -> Settings:
+    return Settings()

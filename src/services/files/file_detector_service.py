@@ -1,16 +1,16 @@
 
 from fastapi import UploadFile
 from helpers.logger import get_logger
-from core import get_settings
+from core import Settings
 from core.exceptions import  InvalidFileExtensionException, UnsupportedFileTypeException
 
 logger = get_logger(__name__)
 
 
-class FileDetector:
+class FileDetectorService:
     
 
-    def __init__(self, settings= get_settings):
+    def __init__(self, settings: Settings):
 
         self.settings = settings
         
@@ -32,10 +32,10 @@ class FileDetector:
     def detect(self, file: UploadFile) -> str:
 
         content_type = (file.content_type or "").lower()
-        filename = (file.filename or "").lower()
+        file_name = (file.filename or "").lower()
 
         logger.info(
-            f"Detecting file type: filename={filename}, content_type={content_type}"
+            f"Detecting file type: filename={file.filename}, content_type={content_type}"
         )
 
         
@@ -46,16 +46,16 @@ class FileDetector:
 
         
         for ext, file_type in self.extensions_mapping.items():
-            if filename.endswith(ext):
+            if file_name.endswith(ext):
                 logger.info(f"Detected file type via extension: {file_type}")
                 return file_type
 
         
-        if "." in filename:
-            extension = filename.split(".")[-1]
+        if "." in file_name:
+            extension = file_name.split(".")[-1]
             logger.error(f"Invalid file extension: .{extension}")
-            raise InvalidFileExtensionException(extension=extension)
+            raise InvalidFileExtensionException( file_name=file.filename,extension=extension)
 
         logger.error(f"Unsupported file type with content_type={content_type}")
-        raise UnsupportedFileTypeException(content_type=content_type)
+        raise UnsupportedFileTypeException( file_name=file.filename,content_type=content_type)
     
