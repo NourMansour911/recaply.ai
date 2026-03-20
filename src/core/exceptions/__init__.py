@@ -1,25 +1,33 @@
 # Auto-generated __init__.py
 
-from . import app_exc
-from .app_exc import AppException
-from . import files_exc
-from .files_exc import EmptyFileException
-from .files_exc import FileTooLargeException
-from .files_exc import InvalidFileExtensionException
-from .files_exc import UnsupportedFileTypeException
-from .files_exc import UploadFailedException
-from . import repos_exc
-from .repos_exc import NotFoundException
+from . import app_exceptions
+from .app_exceptions import AppException
+from . import files_exceptions
+from .files_exceptions import BaseFileException
+from .files_exceptions import EmptyFileException
+from .files_exceptions import FileTooLargeException
+from .files_exceptions import InvalidFileExtensionException
+from .files_exceptions import UnsupportedFileTypeException
+from .files_exceptions import UploadFailedException
+from . import repo_exceptions
+from .repo_exceptions import DatabaseConnectionException
+from .repo_exceptions import FetchFileException
+from .repo_exceptions import InsertFileException
+from .repo_exceptions import RepoException
 
 __all__ = [
-    "app_exc",
-    "files_exc",
-    "repos_exc",
+    "app_exceptions",
+    "files_exceptions",
+    "repo_exceptions",
     "AppException",
+    "BaseFileException",
+    "DatabaseConnectionException",
     "EmptyFileException",
+    "FetchFileException",
     "FileTooLargeException",
+    "InsertFileException",
     "InvalidFileExtensionException",
-    "NotFoundException",
+    "RepoException",
     "UnsupportedFileTypeException",
     "UploadFailedException",
 ]

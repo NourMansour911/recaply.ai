@@ -5,7 +5,7 @@ from helpers import get_project_path
 import uuid
 import re
 from fastapi import UploadFile
-from core.exceptions.files_exc import UploadFailedException
+from core.exceptions.files_exceptions import UploadFailedException
 
 logger = get_logger(__name__)
 

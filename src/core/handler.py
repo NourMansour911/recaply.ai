@@ -1,6 +1,6 @@
 from fastapi.responses import JSONResponse
 from fastapi import Request
-from core.exceptions import AppException
+from core.exceptions.app_exceptions import AppException
 from helpers import get_logger
 
 logger = get_logger(__name__)

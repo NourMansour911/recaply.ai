@@ -1,7 +1,9 @@
 from fastapi import UploadFile
 from helpers.logger import get_logger
-from core import Settings
-from services.files import *
+from core.settings import Settings
+from services.files import FileDetectorService, FileStorageService, FileValidatorService
+from repos import ProjectRepo,FileRepo
+
 
 logger = get_logger(__name__)
 
@@ -13,13 +15,17 @@ class UploadOrchestrator:
         detector: FileDetectorService,
         validator: FileValidatorService,
         settings: Settings ,
+        file_repo: FileRepo ,
+        project_repo: ProjectRepo 
         
     ):
         self.storage_service = storage_service
         self.detector = detector
         self.validator = validator
         self.settings = settings
-        
+        self.file_repo = file_repo
+        self.project_repo = project_repo
+
 
 
     async def execute(

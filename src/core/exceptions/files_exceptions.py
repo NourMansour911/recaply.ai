@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from .app_exc import AppException
+from core.exceptions.app_exceptions import AppException
 
 
 class BaseFileException(AppException):

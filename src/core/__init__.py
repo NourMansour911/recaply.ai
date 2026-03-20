@@ -1,8 +1,6 @@
 # Auto-generated __init__.py
 
-from . import dependecies
-from .dependecies import get_db_client
-from .dependecies import get_tenant_id
+from . import dependencies
 from . import exceptions
 from . import handler
 from .handler import app_exception_handler
@@ -17,7 +15,5 @@ __all__ = [
     "settings",
     "Settings",
     "app_exception_handler",
-    "get_db_client",
     "get_settings",
-    "get_tenant_id",
 ]

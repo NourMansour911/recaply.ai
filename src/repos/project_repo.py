@@ -1,10 +1,9 @@
 
 from models import ProjectModel
 from helpers.enums import DBEnum
-from helpers.logger import get_logger  # << Added logger
+from helpers.logger import get_logger  
 import logging
-from fastapi import Depends
-from core.dependencies import get_db_client
+
 
 
 logger = get_logger("project_repo", level=logging.DEBUG)  # Logger for this layer
@@ -12,7 +11,7 @@ logger = get_logger("project_repo", level=logging.DEBUG)  # Logger for this laye
 class ProjectRepo():
 
     def __init__(self, db_client: object):
-        super().__init__(db_client=db_client)
+        self.db_client = db_client
         self.collection = self.db_client[DBEnum.COLLECTION_PROJECT_NAME.value]
         logger.info(f"ProjectRepo initialized with collection: {DBEnum.COLLECTION_PROJECT_NAME.value}")
     
@@ -125,5 +124,3 @@ class ProjectRepo():
             return False
         
         
-async def get_project_repo(db_client: object = Depends(get_db_client)):
-    return await ProjectRepo.create_instance(db_client=db_client)

@@ -8,10 +8,10 @@ class ProjectModel(BaseModel):
     project_id: str = Field(...,min_length=1)
     project_pushed_at: datetime = Field(default=datetime.now())
     
-    @field_validator("project_name")
+    @field_validator("project_id")
     def validate_project_id(cls,value):
         if not value.isalnum():
-            raise ValueError("project_name must be alphanumeric")
+            raise ValueError("project_id must be alphanumeric")
         return value
     
     model_config = {  
