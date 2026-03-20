@@ -1,10 +1,13 @@
-
 from models import ProjectModel
 from helpers.enums import DBEnum
 from helpers.logger import get_logger  
 import logging
-
-
+from core.exceptions.repo_exceptions import (
+    ProjectCreationException,
+    ProjectFetchException,
+    ProjectInitializationException,
+    ProjectDeletionException
+)
 
 logger = get_logger("project_repo", level=logging.DEBUG)  # Logger for this layer
 
@@ -25,7 +28,7 @@ class ProjectRepo():
             return instance
         except Exception as e:
             logger.error(f"Error creating ProjectRepo instance: {e}", exc_info=True)
-            raise
+            raise ProjectInitializationException(collection_name=DBEnum.COLLECTION_PROJECT_NAME.value) from e
 
     async def init_collection(self):
         try:
@@ -44,7 +47,7 @@ class ProjectRepo():
                 logger.debug(f"Collection {DBEnum.COLLECTION_PROJECT_NAME.value} already exists")
         except Exception as e:
             logger.error(f"Error initializing collection {DBEnum.COLLECTION_PROJECT_NAME.value}: {e}", exc_info=True)
-            raise
+            raise ProjectInitializationException(collection_name=DBEnum.COLLECTION_PROJECT_NAME.value) from e
 
     async def create_project(self, project: ProjectModel):
         try:
@@ -55,18 +58,19 @@ class ProjectRepo():
             return project
         except Exception as e:
             logger.error(f"Error creating project: {e}", exc_info=True)
-            raise
+            raise ProjectCreationException(project_id=getattr(project, "project_id", None)) from e
 
-    async def get_project_or_create_one(self, project_id: str):
+    async def get_project_or_create_one(self,tenant_id: str,project_id: str) -> ProjectModel:
         try:
             logger.debug(f"Fetching project with ID: {project_id}")
             record = await self.collection.find_one({
-                "project_id": project_id
+                "project_id": project_id,
+                "tenant_id": tenant_id
             })
 
             if record is None:
                 logger.info(f"No project found with ID {project_id}, creating new one")
-                project = ProjectModel(project_id=project_id)
+                project = ProjectModel(project_id=project_id, tenant_id=tenant_id)
                 project = await self.create_project(project=project)
                 return project
             
@@ -74,7 +78,7 @@ class ProjectRepo():
             return ProjectModel(**record)
         except Exception as e:
             logger.error(f"Error fetching or creating project with ID {project_id}: {e}", exc_info=True)
-            raise
+            raise ProjectFetchException(project_id=project_id) from e
 
     async def get_all_projects(self, page: int = 1, page_size: int = 10):
         try:
@@ -91,13 +95,9 @@ class ProjectRepo():
             return projects, total_pages
         except Exception as e:
             logger.error(f"Error fetching all projects for page {page}: {e}", exc_info=True)
-            raise
-
-
-
+            raise ProjectFetchException() from e
 
     async def project_exists(self, project_id: str) -> bool:
-
         try:
             logger.debug(f"Checking existence of project: {project_id}")
             record = await self.collection.find_one({"project_id": project_id})
@@ -109,7 +109,6 @@ class ProjectRepo():
             return False
 
     async def delete_project(self, project_id: str) -> bool:
-
         try:
             logger.debug(f"Attempting to delete project: {project_id}")
             result = await self.collection.delete_one({"project_id": project_id})
@@ -121,6 +120,4 @@ class ProjectRepo():
             return deleted
         except Exception as e:
             logger.error(f"Error deleting project {project_id}: {e}", exc_info=True)
-            return False
-        
-        
+            raise ProjectDeletionException(project_id=project_id) from e

@@ -3,6 +3,7 @@ from helpers.logger import get_logger
 from core.settings import Settings
 from services.files import FileDetectorService, FileStorageService, FileValidatorService
 from repos import ProjectRepo,FileRepo
+from models import FileModel,ProjectModel
 
 
 logger = get_logger(__name__)
@@ -51,6 +52,24 @@ class UploadOrchestrator:
 
         
         await self.storage_service.save_file(file, file_path)
+        
+        project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id) 
+        
+        logger.info(
+            f"Using project: {project.project_id} (DB ID: {str(project.iid)})"
+        )
+        
+        file_model = FileModel(
+            file_tenant_id=tenant_id,
+            file_project_iid=project.iid,
+            file_name=original_name,
+            file_type=file_type,
+            file_size_mb=(file.size / self.settings.TO_BYTES).__round__(2),
+            file_path=file_path,
+        )
+        
+        file_model = await self.file_repo.add_file(file_model)
+
 
         logger.info(
             "Upload flow completed",
@@ -62,6 +81,8 @@ class UploadOrchestrator:
         )
 
         return {
+            "project_iid": str(project.iid),
+            "file_id": str(file_model.iid),
             "file_name": original_name,
             "file_type": file_type,
             "file_size": (file.size / self.settings.TO_BYTES).__round__(2),

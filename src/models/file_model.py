@@ -5,11 +5,11 @@ from datetime import datetime
 
 class FileModel(BaseModel):
     iid: Optional[ObjectId] = Field(None, alias="_id")
-    file_tenant_id: ObjectId
+    file_tenant_id: str
     file_project_iid: ObjectId
     file_name: str = Field(..., min_length=1)
     file_type: str = Field(default="file", min_length=1)
-    file_size_mb: int = Field(ge=0, default=None)
+    file_size_mb: float = Field(ge=0, default=None)
     file_path: str = Field(..., min_length=1)
     file_pushed_at: datetime = Field(default=datetime.now())
     file_config: Optional[dict] = None

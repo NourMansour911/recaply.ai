@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from typing import List
 
 class FileResponseSchema(BaseModel):
+    project_iid: str
+    file_id: str
     file_name: str
     file_type: str
     file_size: float
