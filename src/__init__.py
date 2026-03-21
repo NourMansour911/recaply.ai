@@ -6,6 +6,7 @@ from . import logs
 from . import main
 from .main import lifespan
 from . import models
+from . import orchestrators
 from . import repos
 from . import routers
 from . import schemas
@@ -18,6 +19,7 @@ __all__ = [
     "logs",
     "main",
     "models",
+    "orchestrators",
     "repos",
     "routers",
     "schemas",

@@ -6,11 +6,13 @@ from . import file_storage_service
 from .file_storage_service import FileStorageService
 from . import file_validator_service
 from .file_validator_service import FileValidatorService
+from . import normalizers
 
 __all__ = [
     "file_detector_service",
     "file_storage_service",
     "file_validator_service",
+    "normalizers",
     "FileDetectorService",
     "FileStorageService",
     "FileValidatorService",
