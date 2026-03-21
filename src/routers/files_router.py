@@ -24,10 +24,10 @@ async def upload_files(project_id: str,files: List[UploadFile]= File(...),tenant
     
 
 @files_route.get("",description="List all files for a project ")
-async def list_project_files(project_id: str,files: List[UploadFile]= File(...),tenant_id: str = Depends(get_tenant_id)):
+async def list_project_files(project_id: str,tenant_id: str = Depends(get_tenant_id)):
     pass
 
-@files_route.delete("/{file_id}",description="Delete a file and all associated chunks (project-scoped)")
+@files_route.delete("/{file_name}",description="Delete a file and all associated chunks (project-scoped)")
 async def delete_file(tenant_id: str = Depends(get_tenant_id)):
     pass
 

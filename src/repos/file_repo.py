@@ -70,10 +70,11 @@ class FileRepo:
             logger.error(f"Error fetching file {file_name} for project {project_iid}: {e}", exc_info=True)
             raise FetchFileException(file_name=file_name) from e
 
-    async def get_all_project_files(self, project_iid: str) -> list[FileModel]:
+    async def get_all_project_files(self, project_iid: str,tenant_id: str) -> list[FileModel]:
         try:
             query = {
-                "file_project_iid": ObjectId(project_iid) if isinstance(project_iid, str) else project_iid
+                "file_project_iid": ObjectId(project_iid) if isinstance(project_iid, str) else project_iid,
+                "file_tenant_id": tenant_id
             }
             result = await self.collection.find(query).to_list(length=None)
             logger.info(f"Fetched {len(result)} files for project ID: {project_iid}")
