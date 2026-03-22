@@ -26,8 +26,8 @@ class AudioNormalizer(BaseNormalizer):
         file_name: str,
         tenant_id: str,
         project_id: str,
-        whisper_model: WhisperModel = None,
-        language: str = "en",
+        language: str ,
+        file_type: str
     ):
         self.file_path = file_path
         self.file_name = file_name
@@ -46,8 +46,7 @@ class AudioNormalizer(BaseNormalizer):
                 self.project_id
             )
 
-            raw_segments = await self._transcribe_audio(processed_audio_path, self.whisper_provider)
-
+            raw_segments = await self._transcribe_audio(processed_audio_path)
             segment_objects = [
                 Segment(
                     segment_id=seg["segment_id"],
@@ -93,20 +92,19 @@ class AudioNormalizer(BaseNormalizer):
     async def _transcribe_audio(self, audio_path: str) -> List[Dict]:
 
         try:
-            whisper_model = self.whisper_provider.load()
-            result = whisper_model.transcribe(
+            whisper_model = self.whisper_provider.get_model()
+            result, _ = whisper_model.transcribe(
                 audio_path,
                 language=self.language,
-                verbose=False
             )
 
             segments = []
-            for i, segment in enumerate(result["segments"]):
+            for segment in result:
                 segments.append({
-                    "segment_id": f"seg_{i}",
-                    "text": segment["text"].strip(),
-                    "start": float(segment["start"]),
-                    "end": float(segment["end"]),
+                    "segment_id": f"seg_{segment.id}",
+                    "text": segment.text.strip(),
+                    "start": float(segment.start),
+                    "end": float(segment.end),
                     "speaker": None,
                     "page": 1,
                 })

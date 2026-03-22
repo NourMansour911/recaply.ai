@@ -14,7 +14,7 @@ from .normalized_schemas import Segment
 logger = get_logger(__name__)
 
 class SubtitleNormalizer(BaseNormalizer):
-    def __init__(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str = "en"):
+    def __init__(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str ):
         self.file_name = file_name
         self.file_path = file_path
         self.file_type = file_type

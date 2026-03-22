@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 class TextNormalizer(BaseNormalizer):
     
-    def __init__(self, file_path: str, file_name: str, file_type: str, tenant_id: str, project_id: str, language: str = "en"):
+    def __init__(self, file_path: str, file_name: str, file_type: str, tenant_id: str, project_id: str, language: str ):
         self.file_path = file_path
         self.file_name = file_name
         self.file_type = file_type
@@ -35,8 +35,8 @@ class TextNormalizer(BaseNormalizer):
                 Segment(
                     segment_id="seg_0",
                     text=text_content.strip(),
-                    start=None,
-                    end=None, 
+                    start=0.0,
+                    end=0.0, 
                     speaker=None,
                     page=1
                 )
@@ -46,7 +46,8 @@ class TextNormalizer(BaseNormalizer):
                 file_name=self.file_name,
                 file_type=self.file_type,
                 language=self.language,
-                segments=segment_objects
+                segments=segment_objects,
+                
             )
             
             return result

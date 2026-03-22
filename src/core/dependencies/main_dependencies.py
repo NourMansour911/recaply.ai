@@ -20,6 +20,7 @@ def get_project_id(x_project_id: str = Header(...)) -> str:
 def get_db_client(request: Request):
     return request.app.state.db_client
 
+whisper_provider = WhisperProvider()
 
 def get_whisper_provider():
-    return WhisperProvider()
+    return whisper_provider

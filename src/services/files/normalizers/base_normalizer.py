@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 from core.exceptions import NormalizationException
-from .normalized_schemas import NormalizedFileModel, FileType, Segment, Metadata
+from .normalized_schemas import NormalizedFileModel, FileType, Segment
 
 class BaseNormalizer(ABC):
 

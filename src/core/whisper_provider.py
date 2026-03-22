@@ -6,7 +6,7 @@ logger = get_logger(__name__)
 
 
 class WhisperProvider:
-    def __init__(self, model_size: str = "base", device: str = "cpu"):
+    def __init__(self, model_size: str = "base", device: str = "cuda"):
         self.model_size = model_size
         self.device = device
         self._model: WhisperModel | None = None

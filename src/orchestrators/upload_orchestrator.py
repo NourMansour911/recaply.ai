@@ -1,12 +1,13 @@
-from fastapi import UploadFile
+from fastapi import UploadFile,HTTPException
 from helpers.logger import get_logger
 from core.settings import Settings
 from services.files import FileDetectorService, FileStorageService, FileValidatorService
 from repos import ProjectRepo,FileRepo
 from models import FileModel,ProjectModel
 from services.files.normalizers import NormalizerFactory
-
+from services.files.normalizers.normalized_schemas import NormalizedFileModel
 logger = get_logger(__name__)
+
 
 
 class UploadOrchestrator:
@@ -55,7 +56,9 @@ class UploadOrchestrator:
         
         
         ### Normalize 
-        normalizer = NormalizerFactory.create_normalizer(file_path)
+        normalizer = NormalizerFactory.create_normalizer(file_name=original_name,file_type=file_type, tenant_id=tenant_id, project_id=project_id, file_path=file_path)
+        
+        normalized_file : NormalizedFileModel = await normalizer.normalize()
         
         ## Push to MongoDB
         project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id) 
