@@ -6,7 +6,7 @@ from helpers import get_logger
 from core import get_tenant_id
 from orchestrators import get_upload_orchestrator
 from orchestrators import UploadOrchestrator
-from schemas import NormalizedFilesSchema
+from schemas import UploadFilesSchema
 
 
 logger = get_logger(__name__)
@@ -18,7 +18,7 @@ files_route = APIRouter(
 
 
 
-@files_route.post("",response_model=NormalizedFilesSchema,description="Upload files to a specific project ")
+@files_route.post("",response_model=UploadFilesSchema,description="Upload files to a specific project ")
 async def upload_files(project_id: str,files: List[UploadFile]= File(...),tenant_id: str = Depends(get_tenant_id)
                        ,orchestrator: UploadOrchestrator = Depends(get_upload_orchestrator)):
     return await orchestrator.execute_batch(files=files,tenant_id=tenant_id,project_id=project_id)
