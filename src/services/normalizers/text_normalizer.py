@@ -2,7 +2,7 @@ from .base_normalizer import BaseNormalizer
 from .normalize_exceptions import TextExtractionException
 from helpers.logger import get_logger
 import PyPDF2
-from .normalized_schemas import Segment
+from src.schemas.normalized_schemas import Segment
 
 logger = get_logger(__name__)
 
@@ -41,8 +41,7 @@ class TextNormalizer(BaseNormalizer):
             ]
             
             result = self._create_normalized_file_model(
-                file_name=self.file_name,
-                file_type=self.file_type,
+
                 language=self.language,
                 segments=segment_objects,
                 

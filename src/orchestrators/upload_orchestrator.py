@@ -5,7 +5,13 @@ from services.files import FileDetectorService, FileStorageService, FileValidato
 from repos import ProjectRepo,FileRepo
 from models import FileModel,ProjectModel
 from services.normalizers import NormalizerFactory
-from services.normalizers.normalized_schemas import NormalizedFileModel
+from src.schemas.normalized_schemas import NormalizedFileModel
+from services import SemanticChunkingCore
+from integrations.vector_db import VectorDBFactory
+from integrations.llm import LLMFactory
+from bson import ObjectId
+from schemas import NormalizedFilesSchema,FileResponseSchema
+
 logger = get_logger(__name__)
 
 
@@ -18,7 +24,9 @@ class UploadOrchestrator:
         validator: FileValidatorService,
         settings: Settings ,
         file_repo: FileRepo ,
-        project_repo: ProjectRepo 
+        project_repo: ProjectRepo ,
+        vdb_client: VectorDBFactory ,
+        embedding_client: LLMFactory
         
     ):
         self.storage_service = storage_service
@@ -27,14 +35,17 @@ class UploadOrchestrator:
         self.settings = settings
         self.file_repo = file_repo
         self.project_repo = project_repo
+        self.vdb_client = vdb_client
+        self.embedding_client = embedding_client
 
 
 
-    async def execute(
+    async def _execute(
         self,
         file: UploadFile,
+        project: ProjectModel,
         tenant_id: str,
-        project_id: str,
+
     ):
         logger.info("Starting upload flow")
 
@@ -48,7 +59,7 @@ class UploadOrchestrator:
         file_path, original_name,unique_name = self.storage_service.generate_file_path(
             original_filename=file.filename,
             tenant_id=tenant_id,
-            project_id=project_id,
+            project_id=project.project_id,
         )
 
         
@@ -56,13 +67,12 @@ class UploadOrchestrator:
         
         file_size_mb = (file.size / self.settings.TO_BYTES).__round__(2)
 
-        ### Normalize 
-        normalizer = NormalizerFactory.create_normalizer(file_name=original_name,file_type=file_type, tenant_id=tenant_id, project_id=project_id, file_path=file_path)
+        
+        normalizer = NormalizerFactory.create_normalizer(file_name=original_name,file_type=file_type, tenant_id=tenant_id, project_id=project.project_id, file_path=file_path)
         
         normalized_file : NormalizedFileModel = await normalizer.normalize()
         
         ## Push to MongoDB
-        project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id) 
         
         logger.info(
             f"Using project: {project.project_id} (DB ID: {str(project.iid)})"
@@ -88,36 +98,64 @@ class UploadOrchestrator:
                 "file_size": file_size_mb,
             },
         )
-
-        return {
-            "project_iid": str(project.iid),
-            "file_id": str(file_iid),
-            "file_name": original_name,
-            "file_type": file_type,
-            "file_size": file_size_mb,
-            "file_path": file_path,
-        }
         
+        
+
+        return FileResponseSchema(
+            file_id=str(file_iid),
+            file_name=original_name,
+            file_type=file_type,
+            file_size=file_size_mb,
+            file_path=file_path,
+            normalized_file=normalized_file
+        )
+        
+    
     async def execute_batch(
         self,
         files: list[UploadFile],
         tenant_id: str,
         project_id: str,
     ):
+        project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id) 
         
         logger.info("Starting batch upload flow", extra={"files_count": len(files)})
 
-        results = []
+        results: list[FileResponseSchema] = []
 
 
         for file in files:
-            result = await self.execute(file, tenant_id, project_id)
+            result = await self._execute(file, tenant_id=tenant_id, project=project)
             results.append(result)
-
-        return {
-            "tenant_id": tenant_id,
-            "project_id": project_id,
-            "uploaded_files_count": len(results),
-            "files": results,
+        
+        response_date = NormalizedFilesSchema(
+            tenant_id=tenant_id,
+            project_iid=str(project.iid) if isinstance(project.iid, ObjectId) else project.iid,
+            uploaded_files_count=len(results),
+            files=results
+        )
+        return response_date
+        
+        
+ 
+    async def process_semantic_chunks(self,normalized_files_data: NormalizedFilesSchema):
+        try:
             
-        }
+            chunking_service = SemanticChunkingCore(
+                embedding_client=self.embedding_client,  
+                vdb_client=self.vdb_client,   
+                batch_size=32
+            )
+            
+            success = await chunking_service.process_and_store_semantic_chunks(normalized_files_data)
+            
+            if success:
+                logger.info("Semantic chunks processed and stored successfully")
+            else:
+                logger.error("Failed to process semantic chunks")
+                
+            return success
+            
+        except Exception as e:
+            logger.error(f"Semantic chunking process failed: {str(e)}")
+            raise

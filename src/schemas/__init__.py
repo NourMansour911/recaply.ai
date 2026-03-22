@@ -2,10 +2,10 @@
 
 from . import files_schemas
 from .files_schemas import FileResponseSchema
-from .files_schemas import UploadResponseSchema
+from .files_schemas import NormalizedFilesSchema
 
 __all__ = [
     "files_schemas",
     "FileResponseSchema",
-    "UploadResponseSchema",
+    "NormalizedFilesSchema",
 ]

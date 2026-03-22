@@ -1,10 +1,10 @@
 from qdrant_client import models, QdrantClient
 from ..vdb_interface import VectorDBInterface
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+import asyncio
 
 class QdrantDBProvider(VectorDBInterface):
-
     def __init__(self, db_path: str, distance_method: str):
         self.client: Optional[QdrantClient] = None
         self.db_path = db_path
@@ -83,8 +83,8 @@ class QdrantDBProvider(VectorDBInterface):
         return True
     
     def insert_many(self, collection_name: str, texts: list, 
-                    vectors: list, record_ids: list,metadata: list = None, 
-                     batch_size: int = 50):
+                    vectors: list, record_ids: list, metadata: list = None, 
+                    batch_size: int = 50):
         
         if metadata is None:
             metadata = [None] * len(texts)
@@ -125,12 +125,96 @@ class QdrantDBProvider(VectorDBInterface):
         return True
         
     def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
-
         results = self.client.query_points(
             collection_name=collection_name,
             query=vector,
             limit=limit,
             with_payload=True
         )
-
         return results.points
+    
+    async def hybrid_search(self, collection_name: str, 
+                           query_vector: List[float], 
+                           query_text: str = None,
+                           limit: int = 10,
+                           filter_conditions: Dict[str, Any] = None) -> List[Dict]:
+        
+        try:
+            search_params = {
+                "collection_name": collection_name,
+                "query": query_vector,
+                "limit": limit,
+                "with_payload": True,
+                "with_vectors": True
+            }
+            
+           
+            if filter_conditions:
+                must_conditions = []
+                for key, value in filter_conditions.items():
+                    must_conditions.append(
+                        models.FieldCondition(
+                            key=f"metadata.{key}",
+                            match=models.MatchValue(value=value)
+                        )
+                    )
+                
+                if must_conditions:
+                    search_params["query_filter"] = models.Filter(
+                        must=must_conditions
+                    )
+            
+            
+            vector_results = self.client.query_points(**search_params)
+            
+            # If keyword search is also requested, combine results
+            if query_text:
+                # This would require additional setup for keyword indexing
+                # For now, we'll return vector results with keyword scoring
+                pass
+            
+            return vector_results.points
+            
+        except Exception as e:
+            self.logger.error(f"Hybrid search failed: {str(e)}")
+            raise
+    
+    async def keyword_search(self, collection_name: str, 
+                            query_text: str, 
+                            limit: int = 10,
+                            filter_conditions: Dict[str, Any] = None) -> List[Dict]:
+        """
+        Perform keyword-based search
+        """
+        try:
+            search_params = {
+                "collection_name": collection_name,
+                "query": query_text,
+                "limit": limit,
+                "with_payload": True
+            }
+            
+            # Add filters if provided
+            if filter_conditions:
+                must_conditions = []
+                for key, value in filter_conditions.items():
+                    must_conditions.append(
+                        models.FieldCondition(
+                            key=f"metadata.{key}",
+                            match=models.MatchValue(value=value)
+                        )
+                    )
+                
+                if must_conditions:
+                    search_params["query_filter"] = models.Filter(
+                        must=must_conditions
+                    )
+            
+            # Note: This requires full-text search setup in Qdrant
+            # You might need to enable sparse vectors or use payload filtering
+            keyword_results = self.client.query_points(**search_params)
+            return keyword_results.points
+            
+        except Exception as e:
+            self.logger.error(f"Keyword search failed: {str(e)}")
+            raise

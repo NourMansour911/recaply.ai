@@ -8,7 +8,7 @@ from  .normalize_exceptions import (
 from helpers.logger import get_logger
 import webvtt
 from pysrt import SubRipFile
-from .normalized_schemas import Segment
+from src.schemas.normalized_schemas import Segment
 
 
 logger = get_logger(__name__)
@@ -54,7 +54,7 @@ class SubtitleNormalizer(BaseNormalizer):
             ]
             
             
-            result = self._create_normalized_file_model( self.file_name, self.file_type,self.language, segment_objects)
+            result = self._create_normalized_file_model( self.language, segment_objects)
             return result
             
         except SubtitleParsingException:

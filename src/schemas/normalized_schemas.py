@@ -19,8 +19,23 @@ class Segment(BaseModel):
     
     
 class NormalizedFileModel(BaseModel):
-    file_name: str = Field(..., description="Unique identifier for the file")
-    file_type: FileType = Field(..., description="Type of the original file")
     language: str = Field(..., description="Language code (e.g., 'en', 'ar')")
     segments: List[Segment] = Field(..., description="List of content segments")
     duration: float = Field(..., description="Total duration in seconds", ge=0)
+    
+    
+    
+class FileResponseSchema(BaseModel):
+    
+    file_id: str
+    file_name: str
+    file_type: str
+    file_size: float
+    file_path: str
+    normalized_file: NormalizedFileModel
+
+class NormalizedFilesSchema(BaseModel):
+    tenant_id: str
+    project_iid: str
+    uploaded_files_count: int
+    files: List[FileResponseSchema]

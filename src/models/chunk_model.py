@@ -1,31 +1,30 @@
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
-from typing import Optional
-from bson.objectid import ObjectId
-from datetime import datetime
-class ChunkModel(BaseModel):
-    iid: Optional[ObjectId] = Field(None, alias="_id")
-    chunk_tenant_id: ObjectId
-    chunk_project_iid: ObjectId
-    chunk_file_iid: Optional[ObjectId]
-    chunk_file_name: Optional[str]
-    chunk_order: int = Field(..., gt=0)
-    chunk_text: str = Field(..., min_length=1)
-    chunk_metadata: Optional[dict] = None 
-    chunk_type: Optional[str] = None
-    chunk_pushed_at: datetime = Field(default=datetime.now())
 
-    model_config = {  
-        "arbitrary_types_allowed": True, 
-        "populate_by_name": True,
-        "json_encoders": {ObjectId: str}   
-    }
-    
-    @classmethod
-    def get_indexes(cls):
-        return [
-            {
-                "key": [("chunk_project_iid", 1)],
-                "name": "chunk_project_iid_index_1",
-                "unique": False
-            }
-        ]
+
+class SemanticChunk(BaseModel):
+    chunk_order: int = Field(..., description="Order of the chunk in the document")
+    text: str = Field(..., description="Merged text content of the chunk")
+    start: Optional[float] = Field(None, description="Start time in seconds")
+    end: Optional[float] = Field(None, description="End time in seconds")
+    duration: Optional[float] = Field(None, description="Duration in seconds")
+    page: int = Field(1, description="Page number")
+    speakers: List[str] = Field([], description="List of unique speakers in the chunk")
+
+
+class ChunkMetadata(BaseModel):
+    file_id: str = Field(..., description="File identifier")
+    file_name: str = Field(..., description="Original file name")
+    file_type: str = Field(..., description="File type (audio, srt, vtt, txt, pdf)")
+    language: str = Field(..., description="Language code")
+    tenant_id: str = Field(..., description="Tenant identifier")
+    project_iid: str = Field(..., description="Project identifier")
+    chunk_order: int = Field(..., description="Order of the chunk in the document")
+    created_at: str = Field(..., description="Creation timestamp")
+    word_count: int = Field(..., description="Word count in chunk")
+    speakers: List[str] = Field([], description="List of unique speakers in the chunk")
+
+
+class VDBChunkPayload(BaseModel):
+    text: str = Field(..., description="Chunk text content")
+    metadata: ChunkMetadata = Field(..., description="Chunk metadata")

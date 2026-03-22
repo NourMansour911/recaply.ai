@@ -7,7 +7,7 @@ from .normalize_exceptions import (
 )
 from helpers.logger import get_logger
 from helpers.ffmpeg_utils import preprocess_audio, cleanup_temp_file
-from .normalized_schemas import Segment  
+from src.schemas.normalized_schemas import Segment  
 from integrations.whisper_provider import get_whisper_provider
 
 logger = get_logger(__name__)
@@ -57,8 +57,6 @@ class AudioNormalizer(BaseNormalizer):
 
             # Build normalized result
             result = self._create_normalized_file_model(
-                file_name=self.file_name,
-                file_type="audio",
                 language=self.language,
                 segments=segment_objects
             )
