@@ -1,83 +1,105 @@
+# audio_normalizer.py
+
 import asyncio
-from faster_whisper import WhisperModel
-from helpers.ffmpeg_utils import preprocess_audio, cleanup_temp_file
-import json
 from typing import Dict, Any, List
+from faster_whisper import WhisperModel  
+
 from .base_normalizer import BaseNormalizer
 from core.exceptions import (
-    AudioProcessingException, 
+    AudioProcessingException,
     TranscriptionException,
-    FFmpegException
 )
 from helpers.logger import get_logger
+from helpers.ffmpeg_utils import preprocess_audio, cleanup_temp_file
+from .normalized_schemas import Segment  
+from core.dependencies import get_whisper_provider
 
 logger = get_logger(__name__)
 
+
 class AudioNormalizer(BaseNormalizer):
-    """Normalizer for audio files using Whisper for transcription"""
-    
-    def __init__(self, file_path: str  ):
-        super().__init__(file_path)
-        
-        
-        
-    async def normalize(self,) -> Dict[str, Any]:
-        """Normalize audio file to standard JSON schema"""
+
+
+    def __init__(
+        self,
+        file_path: str,
+        file_name: str,
+        tenant_id: str,
+        project_id: str,
+        whisper_model: WhisperModel = None,
+        language: str = "en",
+    ):
+        self.file_path = file_path
+        self.file_name = file_name
+        self.tenant_id = tenant_id
+        self.project_id = project_id
+        self.language = language
+        self.whisper_provider = get_whisper_provider()
+
+    async def normalize(self) -> Dict[str, Any]:
+
         processed_audio_path = None
         try:
-            # Preprocess audio
-            
             processed_audio_path = await preprocess_audio(
-                self.file_path, 
-                "temp_tenant",  # These would come from context
-                "temp_project"
+                self.file_path,
+                self.tenant_id,
+                self.project_id
             )
-            
-            # Transcribe using Whisper
-            segments = await self._transcribe_audio(processed_audio_path)
-            
-            # Calculate metadata
-            duration = max(segment["end"] for segment in segments) if segments else 0.0
-            word_count = sum(len(segment["text"].split()) for segment in segments)
-            
-            
-            result = self._create_base_schema("audio")
-            result["segments"] = segments
-            result["metadata"]["duration"] = duration
-            result["metadata"]["word_count"] = word_count
-            
+
+            raw_segments = await self._transcribe_audio(processed_audio_path, self.whisper_provider)
+
+            segment_objects = [
+                Segment(
+                    segment_id=seg["segment_id"],
+                    text=seg["text"],
+                    start=seg["start"],
+                    end=seg["end"],
+                    speaker=seg["speaker"],
+                    page=seg["page"]
+                )
+                for seg in raw_segments
+            ]
+
+            # Build normalized result
+            result = self._create_normalized_file_model(
+                file_name=self.file_name,
+                file_type="audio",
+                language=self.language,
+                segments=segment_objects
+            )
+
             return result
-            
+
         except AudioProcessingException:
             raise
         except Exception as e:
-            logger.error(f"Audio normalization failed: {str(e)}")
-            raise AudioProcessingException(
-                file_name=self.file_name,
-                reason=str(e)
+            logger.error(
+                "Audio normalization failed",
+                extra={
+                    "file_name": self.file_name,
+                    "tenant_id": self.tenant_id,
+                    "project_id": self.project_id,
+                    "error": str(e),
+                },
             )
+            raise AudioProcessingException(file_name=self.file_name, reason=str(e))
         finally:
-            # Cleanup processed audio
             if processed_audio_path:
                 try:
-                    
                     await cleanup_temp_file(processed_audio_path)
                 except Exception as e:
                     logger.warning(f"Cleanup failed: {str(e)}")
-    
-    async def _transcribe_audio(self, audio_path: str,whisper_model: WhisperModel) -> List[Dict]:
-        
+
+    async def _transcribe_audio(self, audio_path: str) -> List[Dict]:
+
         try:
-            
-            
-            
+            whisper_model = self.whisper_provider.load()
             result = whisper_model.transcribe(
-                audio_path, 
+                audio_path,
                 language=self.language,
                 verbose=False
             )
-            
-            
+
             segments = []
             for i, segment in enumerate(result["segments"]):
                 segments.append({
@@ -87,11 +109,10 @@ class AudioNormalizer(BaseNormalizer):
                     "end": float(segment["end"]),
                     "speaker": None,
                     "page": 1,
-                    "source": "audio"
                 })
-            
+
             return segments
-            
+
         except ImportError:
             logger.error("Whisper library not installed")
             raise TranscriptionException(
@@ -99,8 +120,14 @@ class AudioNormalizer(BaseNormalizer):
                 model_error="Whisper library not installed"
             )
         except Exception as e:
-            logger.error(f"Transcription failed: {str(e)}")
-            raise TranscriptionException(
-                file_name=self.file_name,
-                model_error=str(e)
+            logger.error(
+                "Transcription failed",
+                extra={
+                    "file_name": self.file_name,
+                    "tenant_id": self.tenant_id,
+                    "project_id": self.project_id,
+                    "error": str(e),
+                },
             )
+            raise TranscriptionException(file_name=self.file_name, model_error=str(e))
+

@@ -2,8 +2,9 @@
 
 from . import main_dependencies
 from .main_dependencies import get_db_client
+from .main_dependencies import get_project_id
 from .main_dependencies import get_tenant_id
-from .main_dependencies import get_whisper
+from .main_dependencies import get_whisper_provider
 from . import repos_dependencies
 from .repos_dependencies import get_file_repo
 from .repos_dependencies import get_project_repo
@@ -21,9 +22,10 @@ __all__ = [
     "get_file_detector",
     "get_file_repo",
     "get_file_validator",
+    "get_project_id",
     "get_project_repo",
     "get_storage_service",
     "get_tenant_id",
     "get_upload_orchestrator",
-    "get_whisper",
+    "get_whisper_provider",
 ]

@@ -5,19 +5,18 @@ from core import app_exception_handler,get_settings
 from core.exceptions.app_exceptions import AppException
 from contextlib import asynccontextmanager
 from routers import files_router,projects_router
-from faster_whisper import WhisperModel
-
-
+from helpers.logger import get_logger
+from core.dependencies.main_dependencies import get_whisper_provider
 settings = get_settings()
-
+logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-  
+  whisper_provider = get_whisper_provider()
   # Exception handler
   app.add_exception_handler(AppException, app_exception_handler)
-  
-  # Whisper model
-  app.state.whisper =  WhisperModel("base", device="cuda")
+  logger.info("Loading Whisper model")
+  whisper_provider.load()
+  logger.info("Whisper model loaded successfully")
   
   # MongoDB client
   app.state.connection = AsyncIOMotorClient(settings.MONGODB_URL)

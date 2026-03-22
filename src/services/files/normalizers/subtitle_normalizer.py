@@ -8,32 +8,36 @@ from core.exceptions import (
 from helpers.logger import get_logger
 import webvtt
 from pysrt import SubRipFile
-from .normalized_schemas import NormalizedFileModel, FileType, Segment, Metadata
+from .normalized_schemas import Segment
 
 
 logger = get_logger(__name__)
 
 class SubtitleNormalizer(BaseNormalizer):
-    
-    async def normalize(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str = "en") -> NormalizedFileModel:
-        
+    def __init__(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str = "en"):
         self.file_name = file_name
         self.file_path = file_path
-        self.file_name = file_name
         self.file_type = file_type
         self.tenant_id = tenant_id
         self.project_id = project_id
         self.language = language
+    
+    
+        
+    
+    async def normalize(self):
+        
+        
         
         try:
-            if file_type == 'srt':
+            if self.file_type == 'srt':
                 segments = self._parse_srt()
-            elif file_type == 'vtt':
+            elif self.file_type == 'vtt':
                 segments = self._parse_vtt()
             else:
                 raise SubtitleParsingException(
-                    file_name=file_name,
-                    format_type=file_type,
+                    file_name=self.file_name,
+                    format_type=self.file_type,
                     parse_error="Unsupported subtitle format"
                 )
             
@@ -50,7 +54,7 @@ class SubtitleNormalizer(BaseNormalizer):
             ]
             
             
-            result = self._create_normalized_file_model(file_type, segment_objects)
+            result = self._create_normalized_file_model( self.file_name, self.file_type,self.language, segment_objects)
             return result
             
         except SubtitleParsingException:
@@ -58,12 +62,12 @@ class SubtitleNormalizer(BaseNormalizer):
         except Exception as e:
             logger.error(f"Subtitle normalization failed: {str(e)}")
             raise SubtitleParsingException(
-                file_name=file_name,
-                format_type=file_type,
+                file_name=self.file_name,
+                format_type=self.file_type,
                 parse_error=str(e)
             )
     
-    def _parse_srt(self) -> List[dict]:
+    def _parse_srt(self) -> List[Segment]:
         
         try:
             subs = SubRipFile.open(self.file_path, encoding='utf-8')
@@ -80,31 +84,42 @@ class SubtitleNormalizer(BaseNormalizer):
                         format_type="SRT"
                     )
                 
-                segments.append({
-                    "segment_id": f"seg_{i}",
-                    "text": sub.text.strip().replace('\n', ' '),
-                    "start": start_time,
-                    "end": end_time,
-                    "speaker": None,
-                    "page": 1
-                })
+                segments.append(
+                    Segment(
+                        segment_id=f"seg_{i}",
+                        text=sub.text.strip().replace('\n', ' '),
+                        start=start_time,
+                        end=end_time,
+                        speaker=None,
+                        page=1
+                    )
+                )
+
             
             return segments
         except SubtitleParsingException:
             raise
         except Exception as e:
-            logger.error(f"SRT parsing failed: {str(e)}")
+            logger.error(
+            "SRT parsing failed",
+            extra={
+                "file_name": self.file_name,
+                "tenant_id": self.tenant_id,
+                "project_id": self.project_id,
+                "error": str(e)
+            }
+        )
             raise SubtitleParsingException(
                 file_name=self.file_name,
                 format_type="srt",
                 parse_error=f"SRT parsing failed: {str(e)}"
             )
     
-    def _parse_vtt(self) -> List[dict]:
+    def _parse_vtt(self) -> List[Segment]:
         
         try:
             vtt = webvtt.read(self.file_path)
-            segments = []
+            segments : list[Segment] = []
             
             for i, caption in enumerate(vtt):
                 try:
@@ -117,20 +132,31 @@ class SubtitleNormalizer(BaseNormalizer):
                         format_type="VTT"
                     )
                 
-                segments.append({
-                    "segment_id": f"seg_{i}",
-                    "text": caption.text.strip().replace('\n', ' '),
-                    "start": start_time,
-                    "end": end_time,
-                    "speaker": None,
-                    "page": 1
-                })
+                segments.append(
+                Segment(
+                    segment_id=f"seg_{i}",
+                    text=caption.text.strip().replace('\n', ' '),
+                    start=start_time,
+                    end=end_time,
+                    speaker=None,
+                    page=1
+                )
+            )
+
             
             return segments
         except SubtitleParsingException:
             raise
         except Exception as e:
-            logger.error(f"VTT parsing failed: {str(e)}")
+            logger.error(
+            "VTT parsing failed",
+            extra={
+                "file_name": self.file_name,
+                "tenant_id": self.tenant_id,
+                "project_id": self.project_id,
+                "error": str(e)
+            }
+        )
             raise SubtitleParsingException(
                 file_name=self.file_name,
                 format_type="vtt",

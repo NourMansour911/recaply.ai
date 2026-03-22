@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
-import uuid
-from datetime import datetime
+from typing import List
 from core.exceptions import NormalizationException
 from .normalized_schemas import NormalizedFileModel, FileType, Segment, Metadata
 
@@ -9,7 +7,7 @@ class BaseNormalizer(ABC):
 
     
     @abstractmethod
-    async def normalize(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str = "en") -> NormalizedFileModel:
+    async def normalize(self) -> NormalizedFileModel:
         pass
     
     
@@ -23,7 +21,7 @@ class BaseNormalizer(ABC):
                 file_type=FileType(file_type),
                 language=language,
                 segments=segments,
-                duration=segments[-1].end 
+                duration=segments[-1].end if segments else 0.0 
             )
             
         except Exception as e:
