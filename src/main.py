@@ -1,4 +1,5 @@
-
+import warnings
+warnings.filterwarnings( "ignore", message=".*urllib3.*doesn't match a supported version.*",category=UserWarning,module="requests")
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 from core import app_exception_handler,get_settings
