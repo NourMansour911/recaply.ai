@@ -1,7 +1,7 @@
 from models import FileModel
 from helpers.enums import DBEnum
 from helpers.logger import get_logger
-from core.exceptions.repo_exceptions import DatabaseConnectionException, InsertFileException, FetchFileException
+from .repo_exceptions import DatabaseConnectionException, InsertFileException, FetchFileException
 from bson import ObjectId
 import logging
 

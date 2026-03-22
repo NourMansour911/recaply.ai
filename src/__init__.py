@@ -2,6 +2,7 @@
 
 from . import core
 from . import helpers
+from . import integrations
 from . import logs
 from . import main
 from .main import lifespan
@@ -16,6 +17,7 @@ from . import storage
 __all__ = [
     "core",
     "helpers",
+    "integrations",
     "logs",
     "main",
     "models",

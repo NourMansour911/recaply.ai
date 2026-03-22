@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # Paths
     FILES_PATH :str
     DATABASES_PATH :str
-    VDB_PATH:str
+
     
     # Database
     MONGODB_URL: str
@@ -28,9 +28,21 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
 
-    # Tokens
-    OPENAI_API_KEY : str
+ 
     LANGSMITH_API_KEY : str
+    OPENAI_API_URL : str
+    OPENAI_API_KEY : str
+    
+    GENERATION_BACKEND: str
+    GENERATION_MODEL_ID: str
+    
+    EMBEDDING_BACKEND: str
+    EMBEDDING_MODEL_ID: str
+    EMBEDDING_MODEL_SIZE: int
+    
+    VECTOR_DB_BACKEND: str
+    VECTOR_DB_PATH: str
+    VECTOR_DB_DISTANCE_METHOD: str
     
     
     class Config:

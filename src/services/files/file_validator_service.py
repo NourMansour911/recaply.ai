@@ -1,7 +1,7 @@
 from fastapi import UploadFile
 from helpers.logger import get_logger
 from core.settings import Settings
-from core.exceptions.files_exceptions import (
+from .files_exceptions import (
     FileTooLargeException,
     EmptyFileException,
 )

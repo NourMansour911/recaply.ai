@@ -1,18 +1,14 @@
-# audio_normalizer.py
-
-import asyncio
-from typing import Dict, Any, List
-from faster_whisper import WhisperModel  
+from typing import Dict, Any, List 
 
 from .base_normalizer import BaseNormalizer
-from core.exceptions import (
+from .normalize_exceptions import (
     AudioProcessingException,
     TranscriptionException,
 )
 from helpers.logger import get_logger
 from helpers.ffmpeg_utils import preprocess_audio, cleanup_temp_file
 from .normalized_schemas import Segment  
-from core.dependencies import get_whisper_provider
+from integrations.whisper_provider import get_whisper_provider
 
 logger = get_logger(__name__)
 

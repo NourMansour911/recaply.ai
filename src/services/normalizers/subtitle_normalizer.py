@@ -1,7 +1,7 @@
 import re
 from typing import List
 from .base_normalizer import BaseNormalizer
-from core.exceptions import (
+from  .normalize_exceptions import (
     SubtitleParsingException,
     InvalidTimeFormatException
 )

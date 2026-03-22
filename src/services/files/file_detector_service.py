@@ -2,7 +2,7 @@
 from fastapi import UploadFile
 from helpers.logger import get_logger
 from core.settings import Settings
-from core.exceptions.files_exceptions import  InvalidFileExtensionException, UnsupportedFileTypeException
+from .files_exceptions import  InvalidFileExtensionException, UnsupportedFileTypeException
 
 logger = get_logger(__name__)
 

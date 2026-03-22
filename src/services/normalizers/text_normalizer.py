@@ -1,7 +1,5 @@
-# normalizers/text_normalizer.py
-from typing import Dict, Any, List
 from .base_normalizer import BaseNormalizer
-from core.exceptions import TextExtractionException
+from .normalize_exceptions import TextExtractionException
 from helpers.logger import get_logger
 import PyPDF2
 from .normalized_schemas import Segment

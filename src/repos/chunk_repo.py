@@ -1,11 +1,10 @@
-from core.dependencies.main_dependencies import get_db_client
+from core.main_dependencies import get_db_client
 from models import ChunkModel
 from helpers.enums import DBEnum
 from bson.objectid import ObjectId
 from pymongo import InsertOne
 from fastapi import Depends
-from motor.motor_asyncio import AsyncIOMotorClient
-from core.dependencies.main_dependencies import get_db_client
+from core.main_dependencies import get_db_client
 
 class ChunkRepo():
 

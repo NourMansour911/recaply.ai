@@ -1,9 +1,10 @@
-from fastapi import APIRouter, UploadFile, Request,File,Depends
+from fastapi import APIRouter, UploadFile, File,Depends
 
 from typing import List
 
 from helpers import get_logger
-from core.dependencies import get_tenant_id,get_upload_orchestrator
+from core import get_tenant_id
+from orchestrators import get_upload_orchestrator
 from orchestrators import UploadOrchestrator
 from schemas import UploadResponseSchema
 

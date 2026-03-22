@@ -1,12 +1,12 @@
-# from routers import base,files
+
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 from core import app_exception_handler,get_settings
-from core.exceptions.app_exceptions import AppException
+from core.app_exceptions import AppException
 from contextlib import asynccontextmanager
 from routers import files_router,projects_router
 from helpers.logger import get_logger
-from core.dependencies.main_dependencies import get_whisper_provider
+from integrations.whisper_provider import get_whisper_provider
 settings = get_settings()
 logger = get_logger(__name__)
 @asynccontextmanager

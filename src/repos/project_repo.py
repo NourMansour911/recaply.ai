@@ -2,7 +2,7 @@ from models import ProjectModel
 from helpers.enums import DBEnum
 from helpers.logger import get_logger  
 import logging
-from core.exceptions.repo_exceptions import (
+from .repo_exceptions import (
     ProjectCreationException,
     ProjectFetchException,
     ProjectInitializationException,

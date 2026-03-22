@@ -54,7 +54,8 @@ class UploadOrchestrator:
         
         await self.storage_service.save_file(file, file_path)
         
-        
+        file_size_mb = (file.size / self.settings.TO_BYTES).__round__(2)
+
         ### Normalize 
         normalizer = NormalizerFactory.create_normalizer(file_name=original_name,file_type=file_type, tenant_id=tenant_id, project_id=project_id, file_path=file_path)
         
@@ -72,7 +73,7 @@ class UploadOrchestrator:
             file_project_iid=project.iid,
             file_name=original_name,
             file_type=file_type,
-            file_size_mb=(file.size / self.settings.TO_BYTES).__round__(2),
+            file_size_mb=file_size_mb,
             file_path=file_path,
         )
         
@@ -84,7 +85,7 @@ class UploadOrchestrator:
             extra={
                 "file_path": file_path,
                 "file_type": file_type,
-                "file_size": (file.size / self.settings.TO_BYTES).__round__(2),
+                "file_size": file_size_mb,
             },
         )
 
@@ -93,7 +94,7 @@ class UploadOrchestrator:
             "file_id": str(file_iid),
             "file_name": original_name,
             "file_type": file_type,
-            "file_size": (file.size / self.settings.TO_BYTES).__round__(2),
+            "file_size": file_size_mb,
             "file_path": file_path,
         }
         
