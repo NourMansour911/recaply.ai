@@ -4,8 +4,8 @@ from core.settings import Settings
 from services.files import FileDetectorService, FileStorageService, FileValidatorService
 from repos import ProjectRepo,FileRepo
 from models import FileModel,ProjectModel
-from services.files.normalizers import NormalizerFactory
-from services.files.normalizers.normalized_schemas import NormalizedFileModel
+from services.normalizers import NormalizerFactory
+from services.normalizers.normalized_schemas import NormalizedFileModel
 logger = get_logger(__name__)
 
 
