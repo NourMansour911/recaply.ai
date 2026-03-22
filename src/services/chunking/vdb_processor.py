@@ -5,27 +5,30 @@ from datetime import datetime
 from helpers import get_logger
 from .chunking_exceptions import VectorDBInsertionException
 from models.chunk_model import SemanticChunk, VDBChunkPayload, ChunkMetadata
-from schemas.normalized_schemas import FileResponseSchema
+from schemas.normalized_schemas import NormalizedFileData
 from integrations.vector_db import VectorDBInterface
-
+from core.settings import Settings
 
 logger = get_logger(__name__)
 
 
 class VectorDBProcessor:
-    def __init__(self, vector_db_client: VectorDBInterface, embedding_client: LLMInterface, batch_size: int = 32):
+    def __init__(self, vector_db_client: VectorDBInterface, settings:Settings,embedding_client: LLMInterface, batch_size: int = 32):
         self.vector_db_client = vector_db_client
         self.embedding_client = embedding_client
         self.batch_size = batch_size
+        self.settings = settings
 
     async def prepare_and_store_chunks(
         self,
         semantic_chunks: List[SemanticChunk],
-        file: FileResponseSchema,
+        file: NormalizedFileData,
         project_iid: str,
+        collection_name: str,
         tenant_id: str
     ) -> bool:
         
+        collection_name = collection_name
         try:
             
             texts = []
@@ -66,7 +69,7 @@ class VectorDBProcessor:
                     
                     if len(texts) >= self.batch_size:
                         await self._store_batch(
-                            collection_name="semantic_chunks",
+                            collection_name=collection_name,
                             texts=texts,
                             vectors=vectors,
                             record_ids=record_ids,
@@ -86,7 +89,7 @@ class VectorDBProcessor:
             
             if texts:
                 await self._store_batch(
-                    collection_name="semantic_chunks",
+                    collection_name=collection_name,
                     texts=texts,
                     vectors=vectors,
                     record_ids=record_ids,
@@ -157,7 +160,7 @@ class VectorDBProcessor:
                 if hasattr(self.embedding_client, 'embedding_size'):
                     size = self.embedding_client.embedding_size
                 else:
-                    size = embedding_size if embedding_size > 0 else 768  # Default size
+                    size = embedding_size if embedding_size > 0 else self.settings.EMBEDDING_MODEL_SIZE
                     
                 self.vector_db_client.create_collection(
                     collection_name=collection_name,

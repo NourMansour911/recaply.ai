@@ -15,7 +15,7 @@ class EmbeddingProcessor:
     async def generate_segment_embeddings(self, segments: List[Segment], file_name: str) -> List[List[float]]:
         
         embeddings = []
-        for i, segment in enumerate(segments):
+        for segment in segments:
             try:
                 
                 embedding = await self.embedding_client.embed_text(segment.text.strip())

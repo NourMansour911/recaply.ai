@@ -5,12 +5,12 @@ from services.files import FileDetectorService, FileStorageService, FileValidato
 from repos import ProjectRepo,FileRepo
 from models import FileModel,ProjectModel
 from services.normalizers import NormalizerFactory
-from src.schemas.normalized_schemas import NormalizedFileModel
-from services import SemanticChunkingCore
+from src.schemas.normalized_schemas import NormalizedContent
+from services.chunking import ChunkingService
 from integrations.vector_db import VectorDBFactory
 from integrations.llm import LLMFactory
 from bson import ObjectId
-from schemas import NormalizedFilesSchema,FileResponseSchema
+from schemas import UploadFilesSchema,NormalizedFileData
 
 logger = get_logger(__name__)
 
@@ -26,7 +26,8 @@ class UploadOrchestrator:
         file_repo: FileRepo ,
         project_repo: ProjectRepo ,
         vdb_client: VectorDBFactory ,
-        embedding_client: LLMFactory
+        embedding_client: LLMFactory,
+        chunking_service: ChunkingService
         
     ):
         self.storage_service = storage_service
@@ -37,6 +38,7 @@ class UploadOrchestrator:
         self.project_repo = project_repo
         self.vdb_client = vdb_client
         self.embedding_client = embedding_client
+        self.chunking_service = chunking_service
 
 
 
@@ -70,7 +72,7 @@ class UploadOrchestrator:
         
         normalizer = NormalizerFactory.create_normalizer(file_name=original_name,file_type=file_type, tenant_id=tenant_id, project_id=project.project_id, file_path=file_path)
         
-        normalized_file : NormalizedFileModel = await normalizer.normalize()
+        normalized_file : NormalizedContent = await normalizer.normalize()
         
         ## Push to MongoDB
         
@@ -101,7 +103,7 @@ class UploadOrchestrator:
         
         
 
-        return FileResponseSchema(
+        return NormalizedFileData(
             file_id=str(file_iid),
             file_name=original_name,
             file_type=file_type,
@@ -120,42 +122,17 @@ class UploadOrchestrator:
         project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id) 
         
         logger.info("Starting batch upload flow", extra={"files_count": len(files)})
-
-        results: list[FileResponseSchema] = []
-
-
-        for file in files:
-            result = await self._execute(file, tenant_id=tenant_id, project=project)
-            results.append(result)
         
-        response_date = NormalizedFilesSchema(
-            tenant_id=tenant_id,
-            project_iid=str(project.iid) if isinstance(project.iid, ObjectId) else project.iid,
-            uploaded_files_count=len(results),
-            files=results
-        )
-        return response_date
+        result = []
+        vectorDB_collections = []
+        total_chunks = 0
+        for file in files:
+            file_data = await self._execute(file, tenant_id=tenant_id, project=project)
+            vdb_collection_name , no_of_chunks = await self.chunking_service.process_and_store_semantic_chunks(file_data=file_data, project_iid=project.iid, tenant_id=tenant_id,project_id=project_id)
+            total_chunks += no_of_chunks
+            vectorDB_collections.append(vdb_collection_name)
+
+        return UploadFilesSchema(files_count=len(files), vectorDB_collections=vectorDB_collections,project_iid=project.iid,total_chunks=total_chunks)
         
         
  
-    async def process_semantic_chunks(self,normalized_files_data: NormalizedFilesSchema):
-        try:
-            
-            chunking_service = SemanticChunkingCore(
-                embedding_client=self.embedding_client,  
-                vdb_client=self.vdb_client,   
-                batch_size=32
-            )
-            
-            success = await chunking_service.process_and_store_semantic_chunks(normalized_files_data)
-            
-            if success:
-                logger.info("Semantic chunks processed and stored successfully")
-            else:
-                logger.error("Failed to process semantic chunks")
-                
-            return success
-            
-        except Exception as e:
-            logger.error(f"Semantic chunking process failed: {str(e)}")
-            raise

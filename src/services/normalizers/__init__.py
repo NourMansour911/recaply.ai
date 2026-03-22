@@ -16,10 +16,6 @@ from .normalize_exceptions import SegmentProcessingException
 from .normalize_exceptions import SubtitleParsingException
 from .normalize_exceptions import TextExtractionException
 from .normalize_exceptions import TranscriptionException
-from src.schemas import normalized_schemas
-from src.schemas.normalized_schemas import FileType
-from src.schemas.normalized_schemas import NormalizedFileModel
-from src.schemas.normalized_schemas import Segment
 from . import subtitle_normalizer
 from .subtitle_normalizer import SubtitleNormalizer
 from . import text_normalizer
@@ -30,7 +26,6 @@ __all__ = [
     "base_normalizer",
     "factory",
     "normalize_exceptions",
-    "normalized_schemas",
     "subtitle_normalizer",
     "text_normalizer",
     "AudioNormalizer",
@@ -38,12 +33,9 @@ __all__ = [
     "BaseNormalizeException",
     "BaseNormalizer",
     "FFmpegException",
-    "FileType",
     "InvalidTimeFormatException",
     "NormalizationException",
-    "NormalizedFileModel",
     "NormalizerFactory",
-    "Segment",
     "SegmentProcessingException",
     "SubtitleNormalizer",
     "SubtitleParsingException",

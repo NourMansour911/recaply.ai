@@ -1,11 +1,12 @@
 from typing import List, Dict, Any
 from helpers import get_logger
 from .chunking_exceptions import ChunkingAlgorithmException
-from src.schemas.normalized_schemas import NormalizedFileModel
+from schemas.normalized_schemas import NormalizedContent
 from .semantic_chunking import SemanticChunkingCore
 from .embedding_processor import EmbeddingProcessor
 from .vdb_processor import VectorDBProcessor
-
+from schemas import NormalizedFileData
+from core.settings import Settings
 logger = get_logger(__name__)
 
 
@@ -13,39 +14,31 @@ class ChunkingService:
     def __init__(
         self,
         embedding_client,
-        qdrant_client,
+        vdb_client,
+        settings: Settings,
         similarity_threshold: float = 0.7,
         max_tokens_per_chunk: int = 300,
         min_tokens_per_chunk: int = 20,
-        batch_size: int = 32
+        batch_size: int = 32,
     ):
+        self.settings = settings
         self.embedding_processor = EmbeddingProcessor(embedding_client)
         self.chunking_core = SemanticChunkingCore(
             similarity_threshold=similarity_threshold,
             max_tokens_per_chunk=max_tokens_per_chunk,
             min_tokens_per_chunk=min_tokens_per_chunk
         )
-        self.qdrant_processor = QdrantProcessor(qdrant_client, batch_size)
+        self.vdb_processor = VectorDBProcessor(vdb_client, batch_size,settings=self.settings)
 
-    async def process_and_store_semantic_chunks(self, response_data: Dict[str, Any]) -> bool:
-        """
-        Process semantic chunks from response data and store in Qdrant.
-        """
+    async def process_and_store_semantic_chunks(self, file_data: NormalizedFileData, project_iid: str, tenant_id: str,project_id: str) -> bool:
+        
         try:
-            files = response_data.get("files", [])
             
-            for file_data in files:
-                normalized_file_data = file_data.get("normalized_file", {})
-                if not normalized_file_data:
-                    continue
                     
-                # Create NormalizedFileModel instance
-                normalized_file = NormalizedFileModel(**normalized_file_data)
                 
-                # Process semantic chunks
-                await self._process_file_chunks(normalized_file, file_data)
+            vdb_collection_name , no_of_chunks = await self._process_file_chunks( normalized_file=file_data.normalized_file, file_data=file_data, project_iid=project_iid, tenant_id=tenant_id,project_id=project_id)
             
-            return True
+            return vdb_collection_name , no_of_chunks
             
         except Exception as e:
             logger.error(f"Failed to process semantic chunks: {str(e)}")
@@ -54,44 +47,45 @@ class ChunkingService:
                 algorithm_error=f"Semantic chunking processing failed: {str(e)}"
             )
 
-    async def _process_file_chunks(self, normalized_file: NormalizedFileModel, file_data: Dict[str, Any]):
-        """
-        Process chunks for a single file and store in batches.
-        """
+    async def _process_file_chunks(self, normalized_file: NormalizedContent, file_data: NormalizedFileData, project_iid: str, tenant_id: str,project_id: str) :
+        
         try:
-            # Filter valid segments
             valid_segments = self.embedding_processor.filter_valid_segments(
                 normalized_file.segments, 
-                normalized_file.file_name
             )
             
             if not valid_segments:
-                logger.warning(f"No valid segments found for file {normalized_file.file_name}")
+                logger.warning(f"No valid segments found for file {file_data.file_name}")
                 return
             
-            # Generate embeddings for segments
+            
             segment_embeddings = await self.embedding_processor.generate_segment_embeddings(
                 valid_segments, 
-                normalized_file.file_name
+                file_data.file_name
             )
             
-            # Create semantic chunks
+            
             semantic_chunks = self.chunking_core.perform_semantic_chunking(
                 valid_segments, 
                 segment_embeddings, 
-                normalized_file.file_name
+                file_data.file_name
             )
             
-            # Store chunks in Qdrant
-            await self.qdrant_processor.prepare_and_store_chunks(
-                semantic_chunks, 
-                normalized_file, 
-                file_data
+            vdb_collection_name = f"vdb_{tenant_id}_{project_id}"
+            
+            await self.vdb_processor.prepare_and_store_chunks(
+                semantic_chunks= semantic_chunks, 
+                file= file_data, 
+                project_iid= project_iid,
+                tenant_id= tenant_id,
+                collection_name=vdb_collection_name
             )
+            
+            return vdb_collection_name, len(semantic_chunks)
                 
         except Exception as e:
-            logger.error(f"Failed to process file chunks for {normalized_file.file_name}: {str(e)}")
+            logger.error(f"Failed to process file chunks for {file_data.file_name}: {str(e)}")
             raise ChunkingAlgorithmException(
-                file_name=normalized_file.file_name,
+                file_name=file_data.file_name,
                 algorithm_error=f"File chunk processing failed: {str(e)}"
             )
