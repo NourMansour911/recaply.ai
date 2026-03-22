@@ -50,7 +50,7 @@ class FileRepo:
             result = await self.collection.insert_one(file.model_dump(by_alias=True, exclude_none=True))
             file.iid = result.inserted_id
             logger.info(f"File added successfully with ID: {file.iid}", extra={"file_name": file.file_name})
-            return file
+            return file.iid
         except Exception as e:
             logger.error(f"Error adding file: {e}", exc_info=True, extra={"file_name": file.file_name})
             raise InsertFileException(file_name=file.file_name) from e

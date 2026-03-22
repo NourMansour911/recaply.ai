@@ -1,5 +1,5 @@
 import asyncio
-import subprocess
+from faster_whisper import WhisperModel
 from helpers.ffmpeg_utils import preprocess_audio, cleanup_temp_file
 import json
 from typing import Dict, Any, List
@@ -16,10 +16,12 @@ logger = get_logger(__name__)
 class AudioNormalizer(BaseNormalizer):
     """Normalizer for audio files using Whisper for transcription"""
     
-    def __init__(self, file_path: str, ):
-        super().__init__(file_path,)
+    def __init__(self, file_path: str  ):
+        super().__init__(file_path)
         
-    async def normalize(self) -> Dict[str, Any]:
+        
+        
+    async def normalize(self,) -> Dict[str, Any]:
         """Normalize audio file to standard JSON schema"""
         processed_audio_path = None
         try:
@@ -38,7 +40,7 @@ class AudioNormalizer(BaseNormalizer):
             duration = max(segment["end"] for segment in segments) if segments else 0.0
             word_count = sum(len(segment["text"].split()) for segment in segments)
             
-            # Build result
+            
             result = self._create_base_schema("audio")
             result["segments"] = segments
             result["metadata"]["duration"] = duration
@@ -63,16 +65,15 @@ class AudioNormalizer(BaseNormalizer):
                 except Exception as e:
                     logger.warning(f"Cleanup failed: {str(e)}")
     
-    async def _transcribe_audio(self, audio_path: str) -> List[Dict]:
-        """Transcribe audio using Whisper"""
+    async def _transcribe_audio(self, audio_path: str,whisper_model: WhisperModel) -> List[Dict]:
+        
         try:
             
             
             
-            result = model.transcribe(
+            result = whisper_model.transcribe(
                 audio_path, 
                 language=self.language,
-                task="transcribe",
                 verbose=False
             )
             

@@ -4,7 +4,7 @@ from core.settings import Settings
 from services.files import FileDetectorService, FileStorageService, FileValidatorService
 from repos import ProjectRepo,FileRepo
 from models import FileModel,ProjectModel
-
+from services.files.normalizers import NormalizerFactory
 
 logger = get_logger(__name__)
 
@@ -44,7 +44,7 @@ class UploadOrchestrator:
         await self.validator.validate(file, file_type)
 
         
-        file_path, original_name = self.storage_service.generate_file_path(
+        file_path, original_name,unique_name = self.storage_service.generate_file_path(
             original_filename=file.filename,
             tenant_id=tenant_id,
             project_id=project_id,
@@ -53,6 +53,11 @@ class UploadOrchestrator:
         
         await self.storage_service.save_file(file, file_path)
         
+        
+        ### Normalize 
+        normalizer = NormalizerFactory.create_normalizer(file_path)
+        
+        ## Push to MongoDB
         project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id) 
         
         logger.info(
@@ -68,7 +73,7 @@ class UploadOrchestrator:
             file_path=file_path,
         )
         
-        file_model = await self.file_repo.add_file(file_model)
+        file_iid = await self.file_repo.add_file(file_model)
 
 
         logger.info(
@@ -82,7 +87,7 @@ class UploadOrchestrator:
 
         return {
             "project_iid": str(project.iid),
-            "file_id": str(file_model.iid),
+            "file_id": str(file_iid),
             "file_name": original_name,
             "file_type": file_type,
             "file_size": (file.size / self.settings.TO_BYTES).__round__(2),

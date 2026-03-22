@@ -6,7 +6,7 @@ from services.files.file_storage_service import FileStorageService
 from services.files.file_detector_service import FileDetectorService
 from services.files.file_validator_service import FileValidatorService
 
-from services.orchestrators.upload_orchestrator import UploadOrchestrator
+from orchestrators.upload_orchestrator import UploadOrchestrator
 from .repos_dependencies import get_project_repo,get_file_repo
 from repos.project_repo import ProjectRepo
 from repos.file_repo import FileRepo

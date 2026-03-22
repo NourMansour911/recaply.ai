@@ -8,44 +8,39 @@ import docx
 logger = get_logger(__name__)
 
 class TextNormalizer(BaseNormalizer):
-    """Normalizer for text-based files (txt, pdf)"""
     
-    def __init__(self, file_path: str, language: str = "en"):
-        super().__init__(file_path, language)
-        self.file_extension = file_path.lower().split('.')[-1]
         
-    async def normalize(self) -> Dict[str, Any]:
-        """Normalize text file to standard JSON schema"""
+    async def normalize(self,file_path,file_name,file_type ,tenant_id,project_id,language) -> Dict[str, Any]:
+        
         try:
-            if self.file_extension == 'txt':
+            if file_type == 'txt':
                 text_content = self._read_text_file()
-            elif self.file_extension == 'pdf':
+            elif file_type == 'pdf':
                 text_content = self._read_pdf_file()
-            elif self.file_extension in ['doc', 'docx']:
-                text_content = self._read_docx_file()
             else:
                 raise TextExtractionException(
-                    file_name=self.file_name,
-                    file_type=self.file_extension,
+                    file_name=file_name,
                     extraction_error="Unsupported text format"
                 )
                 
-            # Create single segment for text content
+            
+            
+            
             segments = [{
                 "segment_id": "seg_0",
                 "text": text_content.strip(),
-                "start": 0.0,
-                "end": 0.0,  # No timing info for text files
+                "start":None,
+                "end": None, 
                 "speaker": None,
                 "page": 1,
-                "source": self.file_extension
+                "source": file_type
             }]
             
             # Calculate metadata
             word_count = len(text_content.split())
             
             # Build result
-            result = self._create_base_schema(self.file_extension)
+            result = self._create_base_schema(file_type)
             result["segments"] = segments
             result["metadata"]["duration"] = 0.0
             result["metadata"]["word_count"] = word_count
@@ -57,38 +52,38 @@ class TextNormalizer(BaseNormalizer):
         except Exception as e:
             logger.error(f"Text normalization failed: {str(e)}")
             raise TextExtractionException(
-                file_name=self.file_name,
-                file_type=self.file_extension,
+                file_name=file_name,
+                file_type=file_type,
                 extraction_error=str(e)
             )
     
-    def _read_text_file(self) -> str:
-        """Read plain text file"""
+    def _read_text_file(self,file_path,file_name) -> str:
+    
         try:
-            with open(self.file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 return f.read()
         except UnicodeDecodeError:
             try:
-                with open(self.file_path, 'r', encoding='latin-1') as f:
+                with open(file_path, 'r', encoding='latin-1') as f:
                     return f.read()
             except Exception as e:
                 raise TextExtractionException(
-                    file_name=self.file_name,
+                    file_name=file_name,
                     file_type="txt",
                     extraction_error=f"Encoding error: {str(e)}"
                 )
         except Exception as e:
             raise TextExtractionException(
-                file_name=self.file_name,
+                file_name=file_name,
                 file_type="txt",
                 extraction_error=str(e)
             )
     
-    def _read_pdf_file(self) -> str:
+    def _read_pdf_file(self,file_path,file_name) -> str:
         """Read PDF file and extract text"""
         try:
             text = ""
-            with open(self.file_path, 'rb') as f:
+            with open(file_path, 'rb') as f:
                 pdf_reader = PyPDF2.PdfReader(f)
                 for page_num, page in enumerate(pdf_reader.pages):
                     page_text = page.extract_text()
@@ -98,24 +93,8 @@ class TextNormalizer(BaseNormalizer):
         except Exception as e:
             logger.error(f"PDF reading failed: {str(e)}")
             raise TextExtractionException(
-                file_name=self.file_name,
+                file_name=file_name,
                 file_type="pdf",
                 extraction_error=f"PDF reading failed: {str(e)}"
             )
     
-    def _read_docx_file(self) -> str:
-        """Read DOCX file and extract text"""
-        try:
-            doc = docx.Document(self.file_path)
-            text = ""
-            for para in doc.paragraphs:
-                if para.text.strip():
-                    text += para.text + "\n"
-            return text.strip()
-        except Exception as e:
-            logger.error(f"DOCX reading failed: {str(e)}")
-            raise TextExtractionException(
-                file_name=self.file_name,
-                file_type="docx",
-                extraction_error=f"DOCX reading failed: {str(e)}"
-            )

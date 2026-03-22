@@ -1,42 +1,34 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import List, Optional
 import uuid
 from datetime import datetime
-from core.exceptions import (
-    NormalizationException
-)
+from core.exceptions import NormalizationException
+from .normalized_schemas import NormalizedFileModel, FileType, Segment, Metadata
 
 class BaseNormalizer(ABC):
-    """Base class for all normalizers"""
+
     
-    def __init__(self, file_path: str, language: str = "en"):
-        self.file_path = file_path
-        self.language = language
-        self.file_id = str(uuid.uuid4())
-        self.file_name = file_path.split('/')[-1]
-        
     @abstractmethod
-    async def normalize(self) -> Dict[str, Any]:
-        """Normalize file to standard JSON schema"""
+    async def normalize(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str = "en") -> NormalizedFileModel:
         pass
     
-    def _create_base_schema(self, file_type: str) -> Dict[str, Any]:
-        """Create base JSON schema structure"""
+    
+    def _create_normalized_file_model(self, file_name: str, file_type: str,language: str ,segments: List[Segment]) -> NormalizedFileModel:
+        
         try:
-            return {
-                "file_id": self.file_id,
-                "file_type": file_type,
-                "language": self.language,
-                "segments": [],
-                "metadata": {
-                    "created_at": datetime.utcnow().isoformat() + "Z",
-                    "duration": 0.0,
-                    "word_count": 0
-                }
-            }
+
+            
+            return NormalizedFileModel(
+                file_name=file_name,
+                file_type=FileType(file_type),
+                language=language,
+                segments=segments,
+                duration=segments[-1].end 
+            )
+            
         except Exception as e:
             raise NormalizationException(
-                file_name=self.file_name,
+                file_name=file_name,
                 file_type=file_type,
-                normalization_error=f"Failed to create base schema: {str(e)}"
+                normalization_error=f"Failed to create normalized file model: {str(e)}"
             )

@@ -17,7 +17,7 @@ class FileStorageService:
         file_name = re.sub(r"[^\w.]", "_", original_filename).lower()
         unique_name = f"{uuid.uuid4()}_{file_name}"
         file_path = os.path.join(project_path, unique_name)
-        return file_path, original_filename
+        return file_path, original_filename, unique_name
 
     async def save_file(self, file: UploadFile, file_path: str):
         try:

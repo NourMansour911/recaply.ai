@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Any, List
+from typing import List
 from .base_normalizer import BaseNormalizer
 from core.exceptions import (
     SubtitleParsingException,
@@ -8,40 +8,49 @@ from core.exceptions import (
 from helpers.logger import get_logger
 import webvtt
 from pysrt import SubRipFile
+from .normalized_schemas import NormalizedFileModel, FileType, Segment, Metadata
+
 
 logger = get_logger(__name__)
 
 class SubtitleNormalizer(BaseNormalizer):
-    """Normalizer for SRT and VTT subtitle files"""
     
-    def __init__(self, file_path: str, language: str = "en"):
-        super().__init__(file_path, language)
-        self.file_extension = file_path.lower().split('.')[-1]
+    async def normalize(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str = "en") -> NormalizedFileModel:
         
-    async def normalize(self) -> Dict[str, Any]:
-        """Normalize subtitle file to standard JSON schema"""
+        self.file_name = file_name
+        self.file_path = file_path
+        self.file_name = file_name
+        self.file_type = file_type
+        self.tenant_id = tenant_id
+        self.project_id = project_id
+        self.language = language
+        
         try:
-            if self.file_extension == 'srt':
+            if file_type == 'srt':
                 segments = self._parse_srt()
-            elif self.file_extension in ['vtt', 'webvtt']:
+            elif file_type == 'vtt':
                 segments = self._parse_vtt()
             else:
                 raise SubtitleParsingException(
-                    file_name=self.file_name,
-                    format_type=self.file_extension,
+                    file_name=file_name,
+                    format_type=file_type,
                     parse_error="Unsupported subtitle format"
                 )
-                
-            # Calculate metadata
-            duration = max(segment["end"] for segment in segments) if segments else 0.0
-            word_count = sum(len(segment["text"].split()) for segment in segments)
             
-            # Build result
-            result = self._create_base_schema(self.file_extension)
-            result["segments"] = segments
-            result["metadata"]["duration"] = duration
-            result["metadata"]["word_count"] = word_count
             
+            segment_objects = [
+                Segment(
+                    segment_id=seg["segment_id"],
+                    text=seg["text"],
+                    start=seg["start"],
+                    end=seg["end"],
+                    speaker=seg["speaker"],
+                    page=seg["page"]
+                ) for seg in segments
+            ]
+            
+            
+            result = self._create_normalized_file_model(file_type, segment_objects)
             return result
             
         except SubtitleParsingException:
@@ -49,16 +58,16 @@ class SubtitleNormalizer(BaseNormalizer):
         except Exception as e:
             logger.error(f"Subtitle normalization failed: {str(e)}")
             raise SubtitleParsingException(
-                file_name=self.file_name,
-                format_type=self.file_extension,
+                file_name=file_name,
+                format_type=file_type,
                 parse_error=str(e)
             )
     
-    def _parse_srt(self) -> List[Dict]:
-        """Parse SRT file format"""
+    def _parse_srt(self) -> List[dict]:
+        
         try:
             subs = SubRipFile.open(self.file_path, encoding='utf-8')
-            segments = []
+            segments : list[Segment] = []
             
             for i, sub in enumerate(subs):
                 try:
@@ -77,8 +86,7 @@ class SubtitleNormalizer(BaseNormalizer):
                     "start": start_time,
                     "end": end_time,
                     "speaker": None,
-                    "page": 1,
-                    "source": "srt"
+                    "page": 1
                 })
             
             return segments
@@ -92,8 +100,8 @@ class SubtitleNormalizer(BaseNormalizer):
                 parse_error=f"SRT parsing failed: {str(e)}"
             )
     
-    def _parse_vtt(self) -> List[Dict]:
-        """Parse VTT file format"""
+    def _parse_vtt(self) -> List[dict]:
+        
         try:
             vtt = webvtt.read(self.file_path)
             segments = []
@@ -115,8 +123,7 @@ class SubtitleNormalizer(BaseNormalizer):
                     "start": start_time,
                     "end": end_time,
                     "speaker": None,
-                    "page": 1,
-                    "source": "vtt"
+                    "page": 1
                 })
             
             return segments
@@ -131,7 +138,7 @@ class SubtitleNormalizer(BaseNormalizer):
             )
     
     def _srt_time_to_seconds(self, time_str: str) -> float:
-        """Convert SRT time format to seconds"""
+        
         try:
             hours, minutes, seconds, milliseconds = re.split('[:,]', time_str)
             return int(hours) * 3600 + int(minutes) * 60 + int(seconds) + int(milliseconds) / 1000
@@ -143,7 +150,7 @@ class SubtitleNormalizer(BaseNormalizer):
             )
     
     def _vtt_time_to_seconds(self, time_str: str) -> float:
-        """Convert VTT time format to seconds"""
+        
         try:
             if '-->' in time_str:
                 time_str = time_str.split('-->')[0].strip()

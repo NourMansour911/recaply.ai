@@ -13,21 +13,23 @@ class FileDetectorService:
     def __init__(self, settings: Settings):
 
         self.settings = settings
-        
+                
         self.supported_types = {
-        "audio": ["audio/mpeg", "audio/wav", "audio/x-wav", "audio/mp3"],
-        "srt": ["application/x-subrip"],
-        "vtt": ["text/vtt"],
-        "txt": ["text/plain"],
-        "pdf": ["application/pdf"],}
+            "audio": ["audio/mpeg", "audio/wav", "audio/x-wav", "audio/mp3"],
+            "srt": ["application/x-subrip"],
+            "vtt": ["text/vtt", "text/vtt; charset=utf-8"], 
+            "txt": ["text/plain"],
+            "pdf": ["application/pdf"],
+        }
         
         self.extensions_mapping = {
-            ".mp3": "audio",
-            ".wav": "audio",
-            ".srt": "srt",
-            ".vtt": "vtt",
-            ".txt": "txt",
-            ".pdf": "pdf",}
+        ".mp3": "audio",
+        ".wav": "audio",
+        ".srt": "srt",
+        ".vtt": "vtt",
+        ".webvtt": "vtt",  
+        ".txt": "txt",
+        ".pdf": "pdf",}
         
     def detect(self, file: UploadFile) -> str:
 
