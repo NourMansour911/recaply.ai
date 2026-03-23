@@ -1,6 +1,6 @@
 from fastapi import Request
-from llm import LLMFactory
-from vector_db import VectorDBFactory
+from .llm import LLMFactory
+from .vector_db import VectorDBFactory
 
 def get_vdb_client(request: Request) -> VectorDBFactory:
     return request.app.state.vdb_client

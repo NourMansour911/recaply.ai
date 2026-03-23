@@ -1,7 +1,7 @@
 from typing import List
 from helpers import get_logger
 from .chunking_exceptions import EmbeddingGenerationException
-from src.schemas.normalized_schemas import Segment
+from schemas.normalized_schemas import Segment
 from integrations.llm import LLMInterface
 from core.settings import Settings
 logger = get_logger(__name__)
@@ -18,7 +18,7 @@ class EmbeddingProcessor:
         for segment in segments:
             try:
                 
-                embedding = await self.embedding_client.embed_text(segment.text.strip())
+                embedding =  await self.embedding_client.embed_text(segment.text.strip())
                 
                 if embedding is None:
                     logger.warning(f"Failed to generate embedding for segment {segment.segment_id}, using fallback")

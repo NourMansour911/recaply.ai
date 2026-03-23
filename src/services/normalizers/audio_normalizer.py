@@ -7,7 +7,7 @@ from .normalize_exceptions import (
 )
 from helpers.logger import get_logger
 from helpers.ffmpeg_utils import preprocess_audio, cleanup_temp_file
-from src.schemas.normalized_schemas import Segment  
+from schemas.normalized_schemas import Segment  
 from integrations.whisper_provider import get_whisper_provider
 
 logger = get_logger(__name__)
@@ -42,29 +42,13 @@ class AudioNormalizer(BaseNormalizer):
                 self.project_id
             )
 
-            raw_segments = await self._transcribe_audio(processed_audio_path)
-            segment_objects = [
-                Segment(
-                    segment_id=seg["segment_id"],
-                    text=seg["text"],
-                    start=seg["start"],
-                    end=seg["end"],
-                    speaker=seg["speaker"],
-                    page=seg["page"]
-                )
-                for seg in raw_segments
-            ]
-
-            # Build normalized result
-            result = self._create_normalized_file_model(
-                language=self.language,
-                segments=segment_objects
-            )
-
+            segment_objects = await self._transcribe_audio(processed_audio_path)
+            
+            merged_segments = self.merge_small_segments(segment_objects)
+            
+            result = self._create_normalized_file_model( self.language, merged_segments)
             return result
 
-        except AudioProcessingException:
-            raise
         except Exception as e:
             logger.error(
                 "Audio normalization failed",
@@ -92,18 +76,20 @@ class AudioNormalizer(BaseNormalizer):
                 language=self.language,
             )
 
-            segments = []
-            for segment in result:
-                segments.append({
-                    "segment_id": f"seg_{segment.id}",
-                    "text": segment.text.strip(),
-                    "start": float(segment.start),
-                    "end": float(segment.end),
-                    "speaker": None,
-                    "page": 1,
-                })
-
-            return segments
+            segment_objects = [
+            Segment(
+                segment_id=f"seg_{segment.id}",
+                text=segment.text.strip(),
+                start=float(segment.start),
+                end=float(segment.end),
+                speaker=None,
+                page=1
+            ) for segment in result
+            ]
+                
+            
+            
+            return segment_objects
 
         except ImportError:
             logger.error("Whisper library not installed")

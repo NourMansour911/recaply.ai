@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from helpers import get_logger
 from .chunking_exceptions import ChunkingAlgorithmException
-from src.schemas.normalized_schemas import Segment
+from schemas.normalized_schemas import Segment
 from models.chunk_model import SemanticChunk
 
 logger = get_logger(__name__)
@@ -98,7 +98,7 @@ class SemanticChunkingCore:
                 
                 return False
         
-        # Check for temporal continuity
+        
         if current_segments and new_segment.start is not None and current_segments[-1].end is not None:
             time_gap = new_segment.start - current_segments[-1].end
             if time_gap > 15.0:  

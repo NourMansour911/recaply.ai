@@ -57,7 +57,7 @@ class HuggingFaceProvider(LLMInterface):
     def generate_text(self, prompt: str, chat_history: list = [], temperature: float = None, max_out_tokens: int = None):
         raise NotImplementedError("HuggingFaceProvider doesn't support text generation")
     
-    def embed_text(self, text: str, document_type: str = None):
+    async def embed_text(self, text: str, document_type: str = None):
         if not self.client:
             logger.error("HuggingFace Client not initialized")
             raise LLMModelNotSetException(

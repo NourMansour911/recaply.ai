@@ -8,7 +8,7 @@ from  .normalize_exceptions import (
 from helpers.logger import get_logger
 import webvtt
 from pysrt import SubRipFile
-from src.schemas.normalized_schemas import Segment
+from schemas.normalized_schemas import Segment
 
 
 logger = get_logger(__name__)
@@ -52,9 +52,10 @@ class SubtitleNormalizer(BaseNormalizer):
                     page=seg["page"]
                 ) for seg in segments
             ]
+            merged_segments = self.merge_small_segments(segment_objects)
             
             
-            result = self._create_normalized_file_model( self.language, segment_objects)
+            result = self._create_normalized_file_model( self.language, merged_segments)
             return result
             
         except SubtitleParsingException:

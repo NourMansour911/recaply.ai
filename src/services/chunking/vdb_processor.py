@@ -13,8 +13,8 @@ logger = get_logger(__name__)
 
 
 class VectorDBProcessor:
-    def __init__(self, vector_db_client: VectorDBInterface, settings:Settings,embedding_client: LLMInterface, batch_size: int = 32):
-        self.vector_db_client = vector_db_client
+    def __init__(self, vdb_client: VectorDBInterface, settings:Settings,embedding_client: LLMInterface, batch_size: int = 32):
+        self.vdb_client = vdb_client
         self.embedding_client = embedding_client
         self.batch_size = batch_size
         self.settings = settings
@@ -34,7 +34,7 @@ class VectorDBProcessor:
             texts = []
             vectors = []
             record_ids = []
-            payloads = []
+            payloads:List[VDBChunkPayload] = []
             
             for i, chunk in enumerate(semantic_chunks):
                 try:
@@ -56,7 +56,7 @@ class VectorDBProcessor:
                                     tenant_id= tenant_id,
                                     project_iid=  project_iid,
                                     chunk_order= i,
-                                    created_at=  datetime.now(),
+                                    created_at=  datetime.now().isoformat(),
                                 )
                             )
                     
@@ -64,7 +64,6 @@ class VectorDBProcessor:
                     texts.append(chunk.text)
                     vectors.append(embedding)
                     record_ids.append(str(uuid.uuid4()))
-                    payloads.append(payload.model_dump()) 
                     
                     
                     if len(texts) >= self.batch_size:
@@ -73,7 +72,7 @@ class VectorDBProcessor:
                             texts=texts,
                             vectors=vectors,
                             record_ids=record_ids,
-                            payloads=payloads
+                            payloads= payloads
                         )
                         
                         
@@ -132,7 +131,7 @@ class VectorDBProcessor:
             
             metadata_list = [payload.metadata for payload in payloads]
             
-            success = self.vector_db_client.insert_many(
+            success = self.vdb_client.insert_many(
                 collection_name=collection_name,
                 texts=texts,
                 vectors=vectors,
@@ -155,14 +154,14 @@ class VectorDBProcessor:
     async def _ensure_collection_exists(self, collection_name: str, embedding_size: int) -> bool:
         
         try:
-            if not self.vector_db_client.is_collection_existed(collection_name):
+            if not self.vdb_client.is_collection_existed(collection_name):
                 
                 if hasattr(self.embedding_client, 'embedding_size'):
                     size = self.embedding_client.embedding_size
                 else:
                     size = embedding_size if embedding_size > 0 else self.settings.EMBEDDING_MODEL_SIZE
                     
-                self.vector_db_client.create_collection(
+                self.vdb_client.create_collection(
                     collection_name=collection_name,
                     embedding_size=size
                 )

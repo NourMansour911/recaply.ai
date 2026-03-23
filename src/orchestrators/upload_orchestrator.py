@@ -5,7 +5,7 @@ from services.files import FileDetectorService, FileStorageService, FileValidato
 from repos import ProjectRepo,FileRepo
 from models import FileModel,ProjectModel
 from services.normalizers import NormalizerFactory
-from src.schemas.normalized_schemas import NormalizedContent
+from schemas.normalized_schemas import NormalizedContent
 from services.chunking import ChunkingService
 from integrations.vector_db import VectorDBFactory
 from integrations.llm import LLMFactory
@@ -126,13 +126,19 @@ class UploadOrchestrator:
         result = []
         vectorDB_collections = []
         total_chunks = 0
+        total_files = 0
         for file in files:
             file_data = await self._execute(file, tenant_id=tenant_id, project=project)
+            
             vdb_collection_name , no_of_chunks = await self.chunking_service.process_and_store_semantic_chunks(file_data=file_data, project_iid=project.iid, tenant_id=tenant_id,project_id=project_id)
             total_chunks += no_of_chunks
+            total_files += 1
             vectorDB_collections.append(vdb_collection_name)
 
-        return UploadFilesSchema(files_count=len(files), vectorDB_collections=vectorDB_collections,project_iid=project.iid,total_chunks=total_chunks)
+        return UploadFilesSchema( total_files=total_files,
+                                 vectorDB_collections=vectorDB_collections,
+                                 project_iid=project.iid,
+                                 total_chunks=total_chunks)
         
         
  

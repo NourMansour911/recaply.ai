@@ -6,39 +6,41 @@ from core.app_exceptions import AppException
 from contextlib import asynccontextmanager
 from routers import files_router,projects_router
 from helpers.logger import get_logger
-from integrations.whisper_provider import get_whisper_provider
+from integrations import get_whisper_provider
+from integrations.vector_db import VectorDBFactory
+from integrations.llm import LLMFactory
+
 settings = get_settings()
 logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-  whisper_provider = get_whisper_provider()
   # Exception handler
   app.add_exception_handler(AppException, app_exception_handler)
   logger.info("Loading Whisper model")
-  whisper_provider.load()
   logger.info("Whisper model loaded successfully")
   
   # MongoDB client
   app.state.connection = AsyncIOMotorClient(settings.MONGODB_URL)
   app.state.db_client = app.state.connection[settings.MONGODB_DATABASE]
 
-  yield
-#   # Vector DB client
-#   vdb_provider_factory = VectorDBFactory(settings)
-#   app.vdb_client = vdb_provider_factory.create(provider=settings.VECTOR_DB_BACKEND)
-#   app.vdb_client.connect()
+  llm_provider_factory = LLMFactory(settings)
+  app.state.embedding_client = llm_provider_factory.create(provider=settings.EMBEDDING_BACKEND)
+  app.state.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID, embedding_size=settings.EMBEDDING_MODEL_SIZE)
   
   
-#   # Generation client
-#   llm_provider_factory = LLMFactory(settings)
+  app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND)
+  app.state.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
   
-#   app.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND)
-#   app.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
+  vdb_provider_factory = VectorDBFactory(settings)
+  app.state.vdb_client = vdb_provider_factory.create(provider=settings.VECTOR_DB_BACKEND)
+  app.state.vdb_client.connect()
+  
 
-#   # Embedding client
-#   app.embedding_client = llm_provider_factory.create(provider=settings.EMBEDDING_BACKEND)
-#   app.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID,
-#                                            embedding_size=settings.EMBEDDING_MODEL_SIZE)
+  whisper_provider = get_whisper_provider()
+  whisper_provider.load()
+  
+  
+  yield
   
   
   

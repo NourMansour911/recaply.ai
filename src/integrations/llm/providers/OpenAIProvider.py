@@ -123,7 +123,7 @@ class OpenAIProvider(LLMInterface):
                 generation_error=str(e)
             )
 
-    def embed_text(self, text: str, document_type: str = None):
+    async def embed_text(self, text: str, document_type: str = None):
         if not self.client:
             logger.error("OpenAI Client not initialized")
             raise LLMModelNotSetException(

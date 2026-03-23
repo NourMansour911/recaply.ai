@@ -22,13 +22,13 @@ class ChunkingService:
         batch_size: int = 32,
     ):
         self.settings = settings
-        self.embedding_processor = EmbeddingProcessor(embedding_client)
+        self.embedding_processor = EmbeddingProcessor(embedding_client,settings=self.settings)
         self.chunking_core = SemanticChunkingCore(
             similarity_threshold=similarity_threshold,
             max_tokens_per_chunk=max_tokens_per_chunk,
             min_tokens_per_chunk=min_tokens_per_chunk
         )
-        self.vdb_processor = VectorDBProcessor(vdb_client, batch_size,settings=self.settings)
+        self.vdb_processor = VectorDBProcessor(batch_size=batch_size, vdb_client=vdb_client, settings=self.settings,embedding_client=embedding_client)
 
     async def process_and_store_semantic_chunks(self, file_data: NormalizedFileData, project_iid: str, tenant_id: str,project_id: str) -> bool:
         
@@ -76,7 +76,7 @@ class ChunkingService:
             await self.vdb_processor.prepare_and_store_chunks(
                 semantic_chunks= semantic_chunks, 
                 file= file_data, 
-                project_iid= project_iid,
+                project_iid= str(project_iid),
                 tenant_id= tenant_id,
                 collection_name=vdb_collection_name
             )
