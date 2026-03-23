@@ -2,7 +2,7 @@ from qdrant_client import models, QdrantClient
 from ..vdb_interface import VectorDBInterface
 import logging
 from typing import List, Optional, Dict, Any
-import asyncio
+from schemas.vectordb_schema import CollectionChunksResponse,ChunkResponse,ChunkMetadata
 
 class QdrantDBProvider(VectorDBInterface):
     def __init__(self, db_path: str, distance_method: str):
@@ -29,9 +29,71 @@ class QdrantDBProvider(VectorDBInterface):
     def list_all_collections(self) -> List:
         return self.client.get_collections()
     
+    
+    
     def get_collection_info(self, collection_name: str) -> dict:
         return self.client.get_collection(collection_name=collection_name)
     
+    def get_collection_chunks(
+    self,
+    collection_name: str,
+    page: int = 1,             
+    limit: int = 10,          
+    text_limit: Optional[int] = 100
+    ) -> Dict[str, Any]:
+
+        if page < 1:
+            raise ValueError("Page number must be >= 1")
+
+        if not self.is_collection_existed(collection_name):
+            self.logger.error(f"Collection does not exist: {collection_name}")
+            raise ValueError(f"Collection {collection_name} does not exist")
+
+        try:
+            collection_info = self.client.get_collection(collection_name=collection_name)
+            total_points = collection_info.points_count
+
+            
+            offset = (page - 1) * limit
+
+            points, _ = self.client.scroll(
+                collection_name=collection_name,
+                limit=limit,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False
+            )
+
+            chunks = []
+            for p in points:
+                payload = p.payload or {}
+                metadata = payload.get("metadata", {})
+
+                text = payload.get("text", "")
+                if text_limit is not None:
+                    text = text[:text_limit]
+
+                chunks.append({
+                    "id": str(p.id),
+                    "text": text,
+                    "metadata": metadata
+                })
+
+            total_pages = (total_points + limit - 1) // limit  
+
+            return {
+                "collection_name": collection_name,
+                "total_chunks": total_points,
+                "page": page,
+                "total_pages": total_pages,
+                "returned_chunks": len(chunks),
+                "chunks": chunks
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error fetching chunks: {e}")
+            raise
+        
     def delete_collection(self, collection_name: str):
         if self.is_collection_existed(collection_name):
             return self.client.delete_collection(collection_name=collection_name)
