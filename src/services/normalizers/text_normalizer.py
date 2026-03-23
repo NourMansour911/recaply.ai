@@ -41,12 +41,12 @@ class TextNormalizer(BaseNormalizer):
             ]
             
             
-            result = self._create_normalized_file_model( self.language, segment_objects)
+            merged_segments = self.merge_small_segments(segment_objects)
             
+            result = self._create_normalized_file_model( self.language, merged_segments)
             return result
             
-        except TextExtractionException:
-            raise
+
         except Exception as e:
             logger.error(
                 "Text normalization failed",

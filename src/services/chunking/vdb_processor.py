@@ -144,9 +144,6 @@ class VectorDBProcessor:
                 logger.error("Batch size mismatch")
                 return False
 
-            logger.info(
-                f"Batch → texts={len(texts)}, vectors={len(vectors)}, payloads={len(payloads)}"
-            )
 
             embedding_size = len(vectors[0])
             await self._ensure_collection_exists(collection_name, embedding_size)
