@@ -7,13 +7,17 @@ from .normalized_schemas import FileType
 from .normalized_schemas import NormalizedContent
 from .normalized_schemas import NormalizedFileData
 from .normalized_schemas import Segment
+from . import vectordb_schema
+from .vectordb_schema import SearchRequest
 
 __all__ = [
     "files_schemas",
     "normalized_schemas",
+    "vectordb_schema",
     "FileType",
     "NormalizedContent",
     "NormalizedFileData",
+    "SearchRequest",
     "Segment",
     "UploadFilesSchema",
 ]
