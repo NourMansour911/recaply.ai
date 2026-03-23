@@ -37,28 +37,3 @@ class EmbeddingProcessor:
         
         return embeddings
 
-    def filter_valid_segments(self, segments: List[Segment]) -> List[Segment]:
-        
-        valid_segments = []
-        for segment in segments:
-            try:
-                
-                if not segment.text or not segment.text.strip():
-                    logger.debug(f"Skipping empty segment {segment.segment_id}")
-                    continue
-                
-                token_count = len(segment.text.split())
-                if token_count < 3: 
-                    logger.debug(f"Skipping segment {segment.segment_id} with insufficient tokens: {token_count}")
-                    continue
-                
-                valid_segments.append(segment)
-                
-            except Exception as e:
-                logger.warning(f"Error validating segment {segment.segment_id}: {str(e)}")
-                
-        
-        if len(valid_segments) != len(segments):
-            logger.info(f"Filtered out {len(segments) - len(valid_segments)} invalid segments")
-            
-        return valid_segments

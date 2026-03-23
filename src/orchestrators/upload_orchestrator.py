@@ -123,21 +123,21 @@ class UploadOrchestrator:
         
         logger.info("Starting batch upload flow", extra={"files_count": len(files)})
         
-        result = []
+        
         vectorDB_collections = []
         total_chunks = 0
         total_files = 0
         for file in files:
             file_data = await self._execute(file, tenant_id=tenant_id, project=project)
             
-            vdb_collection_name , no_of_chunks = await self.chunking_service.process_and_store_semantic_chunks(file_data=file_data, project_iid=project.iid, tenant_id=tenant_id,project_id=project_id)
+            vdb_collection_name , no_of_chunks = await self.chunking_service.process_and_store_semantic_chunks(file_data=file_data, project_iid=str(project.iid), tenant_id=tenant_id,project_id=project_id)
             total_chunks += no_of_chunks
             total_files += 1
             vectorDB_collections.append(vdb_collection_name)
 
         return UploadFilesSchema( total_files=total_files,
                                  vectorDB_collections=vectorDB_collections,
-                                 project_iid=project.iid,
+                                 project_iid=str(project.iid),
                                  total_chunks=total_chunks)
         
         
