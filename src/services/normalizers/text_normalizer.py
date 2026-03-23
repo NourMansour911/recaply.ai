@@ -31,7 +31,7 @@ class TextNormalizer(BaseNormalizer):
             
             segment_objects = [
                 Segment(
-                    segment_id="seg_0",
+                    segment_id=f"seg_{1}",
                     text=text_content.strip(),
                     start=0.0,
                     end=0.0, 
@@ -42,6 +42,7 @@ class TextNormalizer(BaseNormalizer):
             
             
             merged_segments = self.merge_small_segments(segment_objects)
+            logger.info("Text normalization completed")
             
             result = self._create_normalized_file_model( self.language, merged_segments)
             return result
