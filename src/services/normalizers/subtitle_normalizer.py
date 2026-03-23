@@ -8,7 +8,7 @@ from  .normalize_exceptions import (
 from helpers.logger import get_logger
 import webvtt
 from pysrt import SubRipFile
-from schemas.normalized_schemas import Segment
+from schemas.normalized_schemas import Segment, NormalizedContent
 
 
 logger = get_logger(__name__)
@@ -25,7 +25,7 @@ class SubtitleNormalizer(BaseNormalizer):
     
         
     
-    async def normalize(self):
+    async def normalize(self) -> NormalizedContent:
         
         
         

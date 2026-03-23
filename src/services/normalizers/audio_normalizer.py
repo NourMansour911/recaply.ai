@@ -7,7 +7,7 @@ from .normalize_exceptions import (
 )
 from helpers.logger import get_logger
 from helpers.ffmpeg_utils import preprocess_audio, cleanup_temp_file
-from schemas.normalized_schemas import Segment  
+from schemas.normalized_schemas import Segment , NormalizedContent
 from integrations.whisper_provider import get_whisper_provider
 
 logger = get_logger(__name__)
@@ -32,7 +32,7 @@ class AudioNormalizer(BaseNormalizer):
         self.language = language
         self.whisper_provider = get_whisper_provider()
 
-    async def normalize(self) -> Dict[str, Any]:
+    async def normalize(self) -> NormalizedContent:
 
         processed_audio_path = None
         try:

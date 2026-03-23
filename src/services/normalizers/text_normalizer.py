@@ -2,7 +2,7 @@ from .base_normalizer import BaseNormalizer
 from .normalize_exceptions import TextExtractionException
 from helpers.logger import get_logger
 import PyPDF2
-from schemas.normalized_schemas import Segment
+from schemas.normalized_schemas import Segment,NormalizedContent
 
 logger = get_logger(__name__)
 
@@ -16,7 +16,7 @@ class TextNormalizer(BaseNormalizer):
         self.project_id = project_id
         self.language = language
     
-    async def normalize(self):
+    async def normalize(self) -> NormalizedContent:
         try:
             if self.file_type == 'txt':
                 text_content = self._read_text_file()

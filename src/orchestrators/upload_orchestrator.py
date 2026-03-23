@@ -74,7 +74,7 @@ class UploadOrchestrator:
         
         normalized_file : NormalizedContent = await normalizer.normalize()
         
-        ## Push to MongoDB
+        
         
         logger.info(
             f"Using project: {project.project_id} (DB ID: {str(project.iid)})"
