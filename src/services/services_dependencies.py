@@ -31,19 +31,21 @@ def get_file_validator(
 
 
 def get_chunking_service(
-   vdb_client = Depends(get_vdb_client),embedding_client  = Depends(get_embedding_client)
+   embedding_client  = Depends(get_embedding_client)
 ) -> ChunkingService:
-    return ChunkingService(embedding_client,vdb_client,settings=Depends(get_settings))
+    return ChunkingService(embedding_client)
 
 
 def get_vdb_service(
     vdb_client: VectorDBInterface = Depends(get_vdb_client),
     generation_client: LLMInterface = Depends(get_generation_client),
-    embedding_client: LLMInterface = Depends(get_embedding_client)
+    embedding_client: LLMInterface = Depends(get_embedding_client),
+    
 ):
     return VDBService(
 
         vdb_client=vdb_client,
         generation_client=generation_client,
-        embedding_client=embedding_client
+        embedding_client=embedding_client,
+        
     )

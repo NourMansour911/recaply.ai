@@ -8,6 +8,7 @@ from helpers.enums import Signals
 import json
 from schemas import CollectionChunksResponse, ChunkResponse
 from models import ChunkMetadata
+from core.settings import Settings
 logger = get_logger(__name__)
 
 
@@ -17,17 +18,18 @@ class VDBService:
         self,
         vdb_client: VectorDBInterface,
         generation_client: LLMInterface ,
-        embedding_client: LLMInterface 
+        embedding_client: LLMInterface ,
     ):
 
         self.vdb_client = vdb_client
         self.generation_client = generation_client
         self.embedding_client = embedding_client
+        
 
         logger.info("Vector DB Push Service initialized")
 
     def get_collection_info(self, project_id: str,tenant_id: str):
-        collection_name = self._create_collection_name(project_id,tenant_id)
+        collection_name = self.vdb_client.create_collection_name(project_id,tenant_id)
         info = self.vdb_client.get_collection_info(collection_name=collection_name)
         return json.loads(
             json.dumps(info,default=lambda x: x.__dict__)
@@ -40,9 +42,10 @@ class VDBService:
         limit: int = 10,
         text_limit: Optional[int] = 100
     ) -> CollectionChunksResponse:
-
         
-        collection_name = self._create_collection_name(project_id,tenant_id)
+        if page < 1:
+            page = 1
+        collection_name = self.vdb_client.create_collection_name(project_id,tenant_id)
         raw_data = self.vdb_client.get_collection_chunks(
             collection_name=collection_name,
             page=page,
@@ -73,9 +76,9 @@ class VDBService:
 
         return response
     
-    async def vdb_search(self, project_id: str, request_schema: SearchRequest):
+    async def vdb_search(self, project_id: str,tenant_id: str ,request_schema: SearchRequest):
 
-        collection_name = self._create_collection_name(project_id)
+        collection_name = self.vdb_client.create_collection_name(project_id,tenant_id)
         vector = self.embedding_client.embed_text(
                 text=request_schema.query,
                 document_type=DocumentTypeEnum.QUERY.value
@@ -95,7 +98,4 @@ class VDBService:
         return search_results
 
         
-    def _create_collection_name(self, project_id: str,tenant_id: str):
-        return f"vdb_{tenant_id}_{project_id}"
-
 

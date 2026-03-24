@@ -9,7 +9,7 @@ from .normalized_schemas import NormalizedFileData
 from .normalized_schemas import Segment
 from . import vectordb_schema
 from .vectordb_schema import ChunkResponse
-from .vectordb_schema import ChunksRequestSchema
+from .vectordb_schema import ChunksQuerySchema
 from .vectordb_schema import CollectionChunksResponse
 from .vectordb_schema import SearchRequest
 
@@ -18,7 +18,7 @@ __all__ = [
     "normalized_schemas",
     "vectordb_schema",
     "ChunkResponse",
-    "ChunksRequestSchema",
+    "ChunksQuerySchema",
     "CollectionChunksResponse",
     "FileType",
     "NormalizedContent",

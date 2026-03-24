@@ -7,8 +7,8 @@ from models import FileModel,ProjectModel
 from services.normalizers import NormalizerFactory
 from schemas.normalized_schemas import NormalizedContent
 from services.chunking import ChunkingService
-from integrations.vector_db import VectorDBFactory
-from integrations.llm import LLMFactory
+from integrations.vector_db import VectorDBInterface
+from integrations.llm import LLMInterface
 from bson import ObjectId
 from schemas import UploadFilesSchema,NormalizedFileData
 
@@ -25,9 +25,9 @@ class UploadOrchestrator:
         settings: Settings ,
         file_repo: FileRepo ,
         project_repo: ProjectRepo ,
-        vdb_client: VectorDBFactory ,
-        embedding_client: LLMFactory,
-        chunking_service: ChunkingService
+        vdb_client: VectorDBInterface, 
+        embedding_client: LLMInterface ,
+        chunking_service: ChunkingService,
         
     ):
         self.storage_service = storage_service
@@ -42,7 +42,7 @@ class UploadOrchestrator:
 
 
 
-    async def _execute(
+    async def _upload_normalize(
         self,
         file: UploadFile,
         file_order: int,
@@ -128,21 +128,37 @@ class UploadOrchestrator:
         logger.info("Starting batch upload flow", extra={"files_count": len(files)})
         
         
-        vectorDB_collections = []
+        
+        normalized_files = []
         total_chunks = 0
         total_files = 0
+        project_vectors = []
+        project_texts = []
+        
+        project_metadatas = []
+        
         for i,file in enumerate(files):
-            file_data = await self._execute(file, tenant_id=tenant_id, project=project,file_order=i+1)
-            
-            vdb_collection_name , no_of_chunks = await self.chunking_service.process_and_store_chunks(file_data=file_data, project_iid=str(project.iid), tenant_id=tenant_id,project_id=project_id)
-            total_chunks += no_of_chunks
+            file_data = await self._upload_normalize(file, tenant_id=tenant_id, project=project,file_order=i+1)
+            normalized_files.append(file_data)
+            texts, vectors, _ ,metadatas = await self.chunking_service.process_file_chunks(file_data=file_data, project_iid=str(project.iid),idx=total_chunks ,tenant_id=tenant_id)
+            project_texts.extend(texts)
+            project_vectors.extend(vectors)
+            project_metadatas.extend(metadatas)
+            total_chunks += len(texts)
             total_files += 1
-            vectorDB_collections.append(vdb_collection_name)
+        
+        vectorDB_collection = self.vdb_client.create_collection_name(project_id=project.project_id,tenant_id=tenant_id)
+        project_record_ids = list(range(total_chunks))
+        logger.info(f"{len(project_texts)},{len(project_vectors)},{len(project_record_ids)},{len(project_metadatas)}")
+        chunks_stored = await self.vdb_client.store_batch(collection_name=vectorDB_collection,batch_size=250,texts=project_texts, vectors=project_vectors,record_ids=project_record_ids,metadatas=project_metadatas)
+        
+        if chunks_stored:
+            logger.info("Chunks stored successfully")
+            return UploadFilesSchema(total_files=total_files,
+                                    vectorDB_collection=vectorDB_collection,
+                                    project_iid=str(project.iid),
+                                    total_chunks=total_chunks)
 
-        return UploadFilesSchema( total_files=total_files,
-                                 vectorDB_collections=vectorDB_collections,
-                                 project_iid=str(project.iid),
-                                 total_chunks=total_chunks)
         
         
  

@@ -1,84 +1,96 @@
-from typing import List, Dict, Any
 from helpers import get_logger
-from .chunking_exceptions import ChunkingAlgorithmException
-from schemas.normalized_schemas import NormalizedContent
-from .semantic_chunking import SemanticChunkingCore
-from .embedding_processor import EmbeddingProcessor
-from .vdb_processor import VectorDBProcessor
-from schemas import NormalizedFileData
-from core.settings import Settings
+from schemas import NormalizedFileData, Segment
+import uuid
+from datetime import datetime
+from typing import List
+from integrations.llm import LLMInterface
+from models.chunk_model import ChunkMetadata
+
+
 logger = get_logger(__name__)
 
 
 class ChunkingService:
     def __init__(
         self,
-        embedding_client,
-        vdb_client,
-        settings: Settings,
-        similarity_threshold: float = 0.7,
-        max_tokens_per_chunk: int = 300,
-        overlap_tokens: int = 50,
-        batch_size: int = 32,
+        embedding_client : LLMInterface,
     ):
-        self.settings = settings
-        self.embedding_processor = EmbeddingProcessor(embedding_client,settings=self.settings)
-        self.chunking_core = SemanticChunkingCore(
-            similarity_threshold=similarity_threshold,
-            max_tokens_per_chunk=max_tokens_per_chunk,
-            overlap_tokens=overlap_tokens
+        self.embedding_client = embedding_client
+    
+    
+    
+    
+    async def process_file_chunks(self, file_data: NormalizedFileData, project_iid: str, tenant_id: str,idx: int):
+        
+
+        segments = file_data.normalized_file.segments
+        
+        texts, vectors, record_ids, metadatas = await self._embed_and_prepare_chunks(
+            idx=idx,
+            chunks= segments, 
+            file= file_data, 
+            project_iid= str(project_iid),
+            tenant_id= tenant_id,
         )
-        self.vdb_processor = VectorDBProcessor(batch_size=batch_size, vdb_client=vdb_client, settings=self.settings,embedding_client=embedding_client)
-
-    async def process_and_store_chunks(self, file_data: NormalizedFileData, project_iid: str, tenant_id: str,project_id: str) -> bool:
         
-        try:
-            
-                    
+        return texts, vectors, record_ids, metadatas
+
+
+
+    async def _embed_and_prepare_chunks(
+        self,
+        idx: int,
+        chunks: List[Segment],
+        file: NormalizedFileData,
+        project_iid: str,
+        tenant_id: str
+    ):
+
+        idx += len(chunks)
+
+    
+        texts = []
+        vectors = []
+        record_ids = list(range(idx, idx + len(chunks)))
+        metadatas: List[ChunkMetadata] = []
+
+        for i, chunk in enumerate(chunks):
+                if not chunk.text or not chunk.text.strip():
+                    logger.warning(f"Skipping empty chunk {i}")
+                    continue
+
+                embedding =  await self.embedding_client.embed_text(chunk.text.strip())
+
+                if not embedding:
+                    logger.warning(f"Skipping chunk {i} due to empty embedding")
+                    continue
+
                 
-            vdb_collection_name , no_of_chunks = await self._process_file_chunks(  file_data=file_data, project_iid=project_iid, tenant_id=tenant_id,project_id=project_id)
-            
-            return vdb_collection_name , no_of_chunks
-            
-        except Exception as e:
-            logger.error(f"Failed to process semantic chunks: {str(e)}")
-            raise ChunkingAlgorithmException(
-                file_name="multiple_files",
-                algorithm_error=f"Semantic chunking processing failed: {str(e)}"
-            )
-
-    async def _process_file_chunks(self, file_data: NormalizedFileData, project_iid: str, tenant_id: str,project_id: str) :
-        
-        try:
-        
-            segments = file_data.normalized_file.segments
-
-            
-            
-            segment_embeddings = await self.embedding_processor.generate_segment_embeddings(
-                segments, 
-                file_data.file_name
-            )
-            
-            
-            semantic_chunks = self.chunking_core.perform_semantic_chunking(segments, segment_embeddings, file_data.file_name)
-            
-            vdb_collection_name = f"vdb_{tenant_id}_{project_id}"
-            
-            await self.vdb_processor.prepare_and_store_chunks(
-                semantic_chunks= semantic_chunks, 
-                file= file_data, 
-                project_iid= str(project_iid),
-                tenant_id= tenant_id,
-                collection_name=vdb_collection_name
-            )
-            
-            return vdb_collection_name, len(segments)
+                metadata=ChunkMetadata(
+                    speakers=chunk.speakers,
+                    word_count=len(chunk.text.split()),
+                    file_id=file.file_id,
+                    file_name=file.file_name,
+                    file_type=file.file_type,
+                    file_order=file.file_order,
+                    language=file.normalized_file.language,
+                    tenant_id=tenant_id,
+                    project_iid=str(project_iid),  
+                    chunk_order=i,
+                    created_at=datetime.now().isoformat(),
+                )
                 
-        except Exception as e:
-            logger.error(f"Failed to process file chunks for {file_data.file_name}: {str(e)}")
-            raise ChunkingAlgorithmException(
-                file_name=file_data.file_name,
-                algorithm_error=f"File chunk processing failed: {str(e)}"
-            )
+
+                
+                metadatas.append(metadata)
+
+                texts.append(chunk.text)
+                vectors.append(embedding)
+                record_ids.append(str(uuid.uuid4()))
+
+
+        
+      
+        return texts, vectors, record_ids, metadatas
+            
  

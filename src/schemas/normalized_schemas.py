@@ -14,7 +14,7 @@ class Segment(BaseModel):
     text: str = Field(..., description="Content of the segment")
     start: Optional[float] = Field(None,  description="Start time in seconds", )
     end: Optional[float] = Field(None,  description="End time in seconds", )
-    speaker: Optional[str] = Field(None, description="Speaker identifier if available")
+    speakers: Optional[List[str]] = Field(None, description="Speaker identifier if available")
     page: int = Field(1, description="Page number (for documents)", ge=1)
     
     

@@ -35,7 +35,7 @@ class TextNormalizer(BaseNormalizer):
                     text=text_content.strip(),
                     start=0.0,
                     end=0.0, 
-                    speaker=None,
+                    speakers=None,
                     page=1
                 )
             ]

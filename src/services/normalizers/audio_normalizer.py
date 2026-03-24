@@ -82,7 +82,7 @@ class AudioNormalizer(BaseNormalizer):
                 text=segment.text.strip(),
                 start=float(segment.start),
                 end=float(segment.end),
-                speaker=None,
+                speakers=None,
                 page=1
             ) for segment in result
             ]

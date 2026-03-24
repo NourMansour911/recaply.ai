@@ -4,7 +4,7 @@ from typing import List
 
 class UploadFilesSchema(BaseModel):
     project_iid: str
-    vectorDB_collections: List[str] 
+    vectorDB_collection: str 
     total_files: int
     total_chunks: int
 

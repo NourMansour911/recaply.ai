@@ -2,7 +2,6 @@
 
 from . import chunk_model
 from .chunk_model import ChunkMetadata
-from .chunk_model import SemanticChunk
 from .chunk_model import VDBChunkPayload
 from . import file_model
 from .file_model import FileModel
@@ -16,6 +15,5 @@ __all__ = [
     "ChunkMetadata",
     "FileModel",
     "ProjectModel",
-    "SemanticChunk",
     "VDBChunkPayload",
 ]

@@ -42,7 +42,7 @@ class BaseNormalizer(ABC):
                         text=chunk_text,
                         start=seg.start,
                         end=seg.end,
-                        speaker=seg.speaker,
+                        speakers=seg.speakers,
                         page=seg.page
                     ))
                     start_idx = end_idx
@@ -80,7 +80,7 @@ class BaseNormalizer(ABC):
         merged_parts = []
 
         for seg in segments:
-            speaker = seg.speaker if seg.speaker else "unknown"
+            speaker = seg.speakers if seg.speakers else "unknown"
             text = seg.text.strip()
 
             merged_parts.append(f"[{speaker}]: {text}")
@@ -92,6 +92,6 @@ class BaseNormalizer(ABC):
             text=merged_text,
             start=segments[0].start,
             end=segments[-1].end,
-            speaker=", ".join(filter(None, {seg.speaker for seg in segments})) or None,
+            speakers=", ".join(filter(None, {seg.speakers for seg in segments})) or None,
             page=segments[0].page
         )

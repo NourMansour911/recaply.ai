@@ -21,7 +21,7 @@ class CollectionChunksResponse(BaseModel):
     chunks: List[ChunkResponse]
     
     
-class ChunksRequestSchema(BaseModel):
+class ChunksQuerySchema(BaseModel):
     limit: Optional[int] = 10
     text_limit: Optional[int] = 100
     page: Optional[int] = 1

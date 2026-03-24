@@ -23,6 +23,9 @@ class VectorDBInterface(ABC):
     def get_collection_info(self, collection_name: str) -> dict:
         pass
     
+    @abstractmethod
+    def create_collection_name(self, project_id: str,tenant_id: str):
+        pass
     
     
     @abstractmethod
@@ -48,10 +51,9 @@ class VectorDBInterface(ABC):
         pass
 
     @abstractmethod
-    def insert_many(self, collection_name: str, texts: list, 
-                          vectors: list, record_ids: list ,metadata: list = None, 
-                           batch_size: int = 50):
+    async def store_batch(self, collection_name, batch_size, text, vectors, record_ids, metadatas):
         pass
+    
 
     @abstractmethod
     def search_by_vector(self, collection_name: str, vector: list, limit: int):

@@ -5,7 +5,7 @@ from typing import List
 from schemas import SearchRequest
 from helpers.logger import get_logger
 from services import VDBService,get_vdb_service
-from schemas.vectordb_schema import CollectionChunksResponse,ChunksRequestSchema
+from schemas.vectordb_schema import CollectionChunksResponse,ChunksQuerySchema
 
 logger = get_logger(__name__)
 
@@ -23,8 +23,8 @@ async def vdb_info(project_id: str,service: VDBService = Depends(get_vdb_service
     return service.get_collection_info(project_id=project_id,tenant_id=tenant_id) 
 
 @vectordb_route.get("/chunks",response_model=CollectionChunksResponse)
-async def vdb_info(project_id: str,request: ChunksRequestSchema,service: VDBService = Depends(get_vdb_service),tenant_id: str = Depends(get_tenant_id)):
-    return service.get_chunks(project_id=project_id,tenant_id=tenant_id,page=request.page,limit=request.limit,text_limit=request.text_limit) 
+async def vdb_info(project_id: str,query: ChunksQuerySchema=Depends(),service: VDBService = Depends(get_vdb_service),tenant_id: str = Depends(get_tenant_id)):
+    return service.get_chunks(project_id=project_id,tenant_id=tenant_id,page=query.page,limit=query.limit,text_limit=query.text_limit) 
 
 
 

@@ -17,6 +17,7 @@ class VectorDBFactory:
             return QdrantDBProvider(
                 db_path=db_path,
                 distance_method=self.settings.VECTOR_DB_DISTANCE_METHOD,
+                vector_size=self.settings.EMBEDDING_MODEL_SIZE
             )
         
         return None

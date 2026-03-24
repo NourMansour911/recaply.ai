@@ -48,7 +48,7 @@ class SubtitleNormalizer(BaseNormalizer):
                     text=seg["text"],
                     start=seg["start"],
                     end=seg["end"],
-                    speaker=seg["speaker"],
+                    speakers=seg["speaker"],
                     page=seg["page"]
                 ) for seg in segments
             ]
@@ -91,7 +91,7 @@ class SubtitleNormalizer(BaseNormalizer):
                         text=sub.text.strip().replace('\n', ' '),
                         start=start_time,
                         end=end_time,
-                        speaker=None,
+                        speakers=None,
                         page=1
                     )
                 )
@@ -139,7 +139,7 @@ class SubtitleNormalizer(BaseNormalizer):
                     text=caption.text.strip().replace('\n', ' '),
                     start=start_time,
                     end=end_time,
-                    speaker=None,
+                    speakers=None,
                     page=1
                 )
             )
