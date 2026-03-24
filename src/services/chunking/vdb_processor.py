@@ -64,6 +64,7 @@ class VectorDBProcessor:
                             file_id=file.file_id,
                             file_name=file.file_name,
                             file_type=file.file_type,
+                            file_order=file.file_order,
                             language=file.normalized_file.language,
                             tenant_id=tenant_id,
                             project_iid=str(project_iid),  

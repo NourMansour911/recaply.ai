@@ -12,11 +12,11 @@ logger = get_logger(__name__)
 
 class FileStorageService:
 
-    def generate_file_path(self, original_filename: str,tenant_id: str,project_id: str):
+    def generate_file_path(self, original_filename: str,tenant_id: str,project_id: str,file_order: int):
         project_path = get_project_path(tenant_id=tenant_id,project_id=project_id)
         file_name = re.sub(r"[^\w.]", "_", original_filename).lower()
         unique_name = f"{uuid.uuid4()}_{file_name}"
-        file_path = os.path.join(project_path, unique_name)
+        file_path = os.path.join(project_path,file_order ,unique_name)
         return file_path, original_filename, unique_name
 
     async def save_file(self, file: UploadFile, file_path: str):

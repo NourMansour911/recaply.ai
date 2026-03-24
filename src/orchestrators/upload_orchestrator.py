@@ -45,6 +45,7 @@ class UploadOrchestrator:
     async def _execute(
         self,
         file: UploadFile,
+        file_order: int,
         project: ProjectModel,
         tenant_id: str,
 
@@ -62,6 +63,7 @@ class UploadOrchestrator:
             original_filename=file.filename,
             tenant_id=tenant_id,
             project_id=project.project_id,
+            file_order=file_order
         )
 
         
@@ -87,6 +89,7 @@ class UploadOrchestrator:
             file_type=file_type,
             file_size_mb=file_size_mb,
             file_path=file_path,
+            file_order=file_order
         )
         
         file_iid = await self.file_repo.add_file(file_model)
@@ -109,6 +112,7 @@ class UploadOrchestrator:
             file_type=file_type,
             file_size=file_size_mb,
             file_path=file_path,
+            file_order=file_order,
             normalized_file=normalized_file
         )
         
@@ -130,7 +134,7 @@ class UploadOrchestrator:
         for file in files:
             file_data = await self._execute(file, tenant_id=tenant_id, project=project)
             
-            vdb_collection_name , no_of_chunks = await self.chunking_service.process_and_store_semantic_chunks(file_data=file_data, project_iid=str(project.iid), tenant_id=tenant_id,project_id=project_id)
+            vdb_collection_name , no_of_chunks = await self.chunking_service.process_and_store_chunks(file_data=file_data, project_iid=str(project.iid), tenant_id=tenant_id,project_id=project_id)
             total_chunks += no_of_chunks
             total_files += 1
             vectorDB_collections.append(vdb_collection_name)

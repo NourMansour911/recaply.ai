@@ -9,6 +9,7 @@ class FileModel(BaseModel):
     file_project_iid: ObjectId
     file_name: str = Field(..., min_length=1)
     file_type: str = Field(default="file", min_length=1)
+    file_order: int
     file_size_mb: float = Field(ge=0, default=None)
     file_path: str = Field(..., min_length=1)
     file_pushed_at: datetime = Field(default=datetime.now())

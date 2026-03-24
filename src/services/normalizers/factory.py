@@ -16,7 +16,7 @@ class NormalizerFactory:
     }
     
     @classmethod
-    def create_normalizer(cls,file_type: str , file_name: str,tenant_id,project_id,file_path: str, language: str = "en") -> BaseNormalizer:
+    def create_normalizer(cls,file_type: str ,file_name: str,tenant_id,project_id,file_path: str, language: str = "en") -> BaseNormalizer:
         
         if file_type in cls._normalizers:
             return cls._normalizers[file_type](file_path=file_path, file_name=file_name,file_type=file_type, tenant_id=tenant_id, project_id=project_id, language=language)

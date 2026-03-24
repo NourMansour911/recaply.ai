@@ -30,6 +30,7 @@ class NormalizedFileData(BaseModel):
     file_id: str
     file_name: str
     file_type: str
+    file_order: int
     file_size: float
     file_path: str
     normalized_file: NormalizedContent

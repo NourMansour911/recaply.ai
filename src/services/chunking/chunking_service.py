@@ -18,7 +18,7 @@ class ChunkingService:
         settings: Settings,
         similarity_threshold: float = 0.7,
         max_tokens_per_chunk: int = 300,
-        min_tokens_per_chunk: int = 20,
+        overlap_tokens: int = 50,
         batch_size: int = 32,
     ):
         self.settings = settings
@@ -26,11 +26,11 @@ class ChunkingService:
         self.chunking_core = SemanticChunkingCore(
             similarity_threshold=similarity_threshold,
             max_tokens_per_chunk=max_tokens_per_chunk,
-            min_tokens_per_chunk=min_tokens_per_chunk
+            overlap_tokens=overlap_tokens
         )
         self.vdb_processor = VectorDBProcessor(batch_size=batch_size, vdb_client=vdb_client, settings=self.settings,embedding_client=embedding_client)
 
-    async def process_and_store_semantic_chunks(self, file_data: NormalizedFileData, project_iid: str, tenant_id: str,project_id: str) -> bool:
+    async def process_and_store_chunks(self, file_data: NormalizedFileData, project_iid: str, tenant_id: str,project_id: str) -> bool:
         
         try:
             
@@ -61,23 +61,19 @@ class ChunkingService:
             )
             
             
-            semantic_chunks = self.chunking_core.perform_semantic_chunking(
-                segments, 
-                segment_embeddings, 
-                file_data.file_name
-            )
+            semantic_chunks = self.chunking_core.perform_semantic_chunking(segments, segment_embeddings, file_data.file_name)
             
             vdb_collection_name = f"vdb_{tenant_id}_{project_id}"
             
             await self.vdb_processor.prepare_and_store_chunks(
-                semantic_chunks= semantic_chunks, 
+                semantic_chunks= segments, 
                 file= file_data, 
                 project_iid= str(project_iid),
                 tenant_id= tenant_id,
                 collection_name=vdb_collection_name
             )
             
-            return vdb_collection_name, len(semantic_chunks)
+            return vdb_collection_name, len(segments)
                 
         except Exception as e:
             logger.error(f"Failed to process file chunks for {file_data.file_name}: {str(e)}")
@@ -85,3 +81,4 @@ class ChunkingService:
                 file_name=file_data.file_name,
                 algorithm_error=f"File chunk processing failed: {str(e)}"
             )
+ 

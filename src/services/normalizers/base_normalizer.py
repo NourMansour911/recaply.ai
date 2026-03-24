@@ -77,9 +77,19 @@ class BaseNormalizer(ABC):
 
         return final_segments    
     def _merge_window(self, segments: List[Segment]) -> Segment:
+        merged_parts = []
+
+        for seg in segments:
+            speaker = seg.speaker if seg.speaker else "unknown"
+            text = seg.text.strip()
+
+            merged_parts.append(f"[{speaker}]: {text}")
+
+        merged_text = "\n".join(merged_parts)
+
         return Segment(
             segment_id=f"chunk_{segments[0].segment_id}_{segments[-1].segment_id}",
-            text=" ".join(seg.text for seg in segments).strip(),
+            text=merged_text,
             start=segments[0].start,
             end=segments[-1].end,
             speaker=", ".join(filter(None, {seg.speaker for seg in segments})) or None,
