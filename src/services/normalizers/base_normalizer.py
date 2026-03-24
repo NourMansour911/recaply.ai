@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from schemas.normalized_schemas import NormalizedContent, FileType, Segment
+from schemas.normalized_schemas import NormalizedContent, Segment
 
 class BaseNormalizer(ABC):
 
@@ -21,16 +21,13 @@ class BaseNormalizer(ABC):
         segments: List[Segment],
         target_words: int = 50,
         max_words: int = 80,
-        
     ) -> List[Segment]:
 
         merged_segments = []
-
         for seg in segments:
             words = seg.text.split()
             word_count = len(words)
 
-            
             if word_count > max_words:
                 start_idx = 0
                 chunk_order = 0
@@ -43,14 +40,13 @@ class BaseNormalizer(ABC):
                         start=seg.start,
                         end=seg.end,
                         speakers=seg.speakers,
-                        page=seg.page
+                        
                     ))
                     start_idx = end_idx
                     chunk_order += 1
             else:
                 merged_segments.append(seg)
 
-        
         final_segments = []
         current_segments = []
         current_word_count = 0
@@ -58,31 +54,42 @@ class BaseNormalizer(ABC):
         for seg in merged_segments:
             words = seg.text.split()
             word_count = len(words)
-            current_segments.append(seg)
-            current_word_count += word_count
+            
+            if current_word_count + word_count > max_words:
+                if current_segments:
+                    final_segments.append(self._merge_window(current_segments))
+                
+                if word_count <= max_words:
+                    current_segments = [seg]
+                    current_word_count = word_count
+                else:
+                    final_segments.append(seg)
+                    current_segments = []
+                    current_word_count = 0
+            else:
+                current_segments.append(seg)
+                current_word_count += word_count
 
-            if current_word_count >= target_words:
-                if current_word_count <= max_words:
+                if current_word_count >= target_words:
                     final_segments.append(self._merge_window(current_segments))
                     current_segments = []
                     current_word_count = 0
-                else:
-                    last_seg = current_segments.pop()
-                    final_segments.append(self._merge_window(current_segments))
-                    current_segments = [last_seg]
-                    current_word_count = len(last_seg.text.split())
 
         if current_segments:
             final_segments.append(self._merge_window(current_segments))
 
-        return final_segments    
+        return final_segments
+
+
     def _merge_window(self, segments: List[Segment]) -> Segment:
+        if not segments:
+            raise ValueError("Segments list cannot be empty")
+        
         merged_parts = []
 
         for seg in segments:
-            speaker = seg.speakers if seg.speakers else "unknown"
+            speaker = seg.speakers if seg.speakers else "speaker"
             text = seg.text.strip()
-
             merged_parts.append(f"[{speaker}]: {text}")
 
         merged_text = "\n".join(merged_parts)
@@ -93,5 +100,5 @@ class BaseNormalizer(ABC):
             start=segments[0].start,
             end=segments[-1].end,
             speakers=", ".join(filter(None, {seg.speakers for seg in segments})) or None,
-            page=segments[0].page
+            
         )

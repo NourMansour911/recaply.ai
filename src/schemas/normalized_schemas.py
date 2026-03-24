@@ -15,7 +15,7 @@ class Segment(BaseModel):
     start: Optional[float] = Field(None,  description="Start time in seconds", )
     end: Optional[float] = Field(None,  description="End time in seconds", )
     speakers: Optional[List[str]] = Field(None, description="Speaker identifier if available")
-    page: int = Field(1, description="Page number (for documents)", ge=1)
+    
     
     
 class NormalizedContent(BaseModel):

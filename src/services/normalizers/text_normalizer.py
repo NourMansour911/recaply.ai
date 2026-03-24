@@ -3,6 +3,7 @@ from .normalize_exceptions import TextExtractionException
 from helpers.logger import get_logger
 import PyPDF2
 from schemas.normalized_schemas import Segment,NormalizedContent
+from typing import List
 
 logger = get_logger(__name__)
 
@@ -29,16 +30,10 @@ class TextNormalizer(BaseNormalizer):
                     extraction_error="Unsupported text format"
                 )
             
-            segment_objects = [
-                Segment(
-                    segment_id=f"seg_{1}",
-                    text=text_content.strip(),
-                    start=0.0,
-                    end=0.0, 
-                    speakers=None,
-                    page=1
-                )
-            ]
+            segment_objects = self.split_text_into_segments(
+            text_content,
+            words_per_segment=70  
+        )
             
             
             merged_segments = self.merge_small_segments(segment_objects)
@@ -65,6 +60,39 @@ class TextNormalizer(BaseNormalizer):
                 extraction_error=str(e)
             )
     
+    def split_text_into_segments(
+    self,
+    text: str,
+    words_per_segment: int = 80
+    ) -> List[Segment]:
+
+        words = text.split()
+        segments = []
+
+        start_idx = 0
+        segment_counter = 0
+
+        while start_idx < len(words):
+            end_idx = start_idx + words_per_segment
+            chunk_words = words[start_idx:end_idx]
+
+            segment_text = " ".join(chunk_words)
+
+            segments.append(
+                Segment(
+                    segment_id=f"seg_{segment_counter}",
+                    text=segment_text,
+                    start=0.0,  
+                    end=0.0,
+                    speakers=None,
+                    
+                )
+            )
+
+            start_idx = end_idx
+            segment_counter += 1
+
+        return segments
     def _read_text_file(self) -> str:
         try:
             with open(self.file_path, 'r', encoding='utf-8') as f:

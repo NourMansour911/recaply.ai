@@ -83,7 +83,7 @@ class AudioNormalizer(BaseNormalizer):
                 start=float(segment.start),
                 end=float(segment.end),
                 speakers=None,
-                page=1
+                
             ) for segment in result
             ]
                 

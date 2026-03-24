@@ -49,7 +49,7 @@ class SubtitleNormalizer(BaseNormalizer):
                     start=seg["start"],
                     end=seg["end"],
                     speakers=seg["speaker"],
-                    page=seg["page"]
+                    
                 ) for seg in segments
             ]
             merged_segments = self.merge_small_segments(segment_objects)
@@ -92,7 +92,7 @@ class SubtitleNormalizer(BaseNormalizer):
                         start=start_time,
                         end=end_time,
                         speakers=None,
-                        page=1
+                        
                     )
                 )
 
@@ -140,7 +140,7 @@ class SubtitleNormalizer(BaseNormalizer):
                     start=start_time,
                     end=end_time,
                     speakers=None,
-                    page=1
+                    
                 )
             )
 
