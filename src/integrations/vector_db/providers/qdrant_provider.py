@@ -70,7 +70,7 @@ class QdrantDBProvider(VectorDBInterface):
                 metadata = payload.get("metadata", {})
 
                 text = payload.get("text", "")
-                if text_limit is not None:
+                if text_limit is not None and len(text) > text_limit and text_limit > 0:
                     text = text[:text_limit]
 
                 chunks.append({

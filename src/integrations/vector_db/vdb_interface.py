@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional, Dict, Any
 
 class VectorDBInterface(ABC):
 
@@ -21,6 +21,14 @@ class VectorDBInterface(ABC):
 
     @abstractmethod
     def get_collection_info(self, collection_name: str) -> dict:
+        pass
+    
+    
+    
+    @abstractmethod
+    def get_collection_chunks(
+    self, collection_name: str, page: int = 1,limit: int = 10,
+                text_limit: Optional[int] = 100 ) -> Dict[str, Any]:
         pass
 
     @abstractmethod

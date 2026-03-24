@@ -15,5 +15,13 @@ class ChunkResponse(BaseModel):
 class CollectionChunksResponse(BaseModel):
     collection_name: str
     total_chunks: int
+    page: int
+    total_pages: int
     returned_chunks: int
     chunks: List[ChunkResponse]
+    
+    
+class ChunksRequestSchema(BaseModel):
+    limit: Optional[int] = 10
+    text_limit: Optional[int] = 100
+    page: Optional[int] = 1
