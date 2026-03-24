@@ -16,11 +16,12 @@ class FileStorageService:
         project_path = get_project_path(tenant_id=tenant_id,project_id=project_id)
         file_name = re.sub(r"[^\w.]", "_", original_filename).lower()
         unique_name = f"{uuid.uuid4()}_{file_name}"
-        file_path = os.path.join(project_path,file_order ,unique_name)
+        file_path = os.path.join(project_path,str(file_order) ,unique_name)
         return file_path, original_filename, unique_name
 
     async def save_file(self, file: UploadFile, file_path: str):
         try:
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             async with aiofiles.open(file_path, "wb") as f:
                 content = await file.read()
                 await f.write(content)

@@ -66,7 +66,7 @@ class ChunkingService:
             vdb_collection_name = f"vdb_{tenant_id}_{project_id}"
             
             await self.vdb_processor.prepare_and_store_chunks(
-                semantic_chunks= segments, 
+                semantic_chunks= semantic_chunks, 
                 file= file_data, 
                 project_iid= str(project_iid),
                 tenant_id= tenant_id,

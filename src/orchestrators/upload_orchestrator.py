@@ -131,8 +131,8 @@ class UploadOrchestrator:
         vectorDB_collections = []
         total_chunks = 0
         total_files = 0
-        for file in files:
-            file_data = await self._execute(file, tenant_id=tenant_id, project=project)
+        for i,file in enumerate(files):
+            file_data = await self._execute(file, tenant_id=tenant_id, project=project,file_order=i+1)
             
             vdb_collection_name , no_of_chunks = await self.chunking_service.process_and_store_chunks(file_data=file_data, project_iid=str(project.iid), tenant_id=tenant_id,project_id=project_id)
             total_chunks += no_of_chunks
