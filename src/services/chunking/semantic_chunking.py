@@ -1,86 +1,109 @@
-from typing import List
+from typing import List, Optional
 from schemas import Segment
 from scipy.spatial.distance import cosine
 from helpers.logger import get_logger
 
 logger = get_logger(__name__)
 
-class SemanticChunkingService:
 
-    def __init__(self, embedding_client, similarity_threshold: float ):
+class SemanticChunkingService:
+    def __init__(self, embedding_client, similarity_threshold: float):
         self.embedding_client = embedding_client
         self.similarity_threshold = similarity_threshold
 
     async def run(
         self,
         segments: List[Segment],
-        max_chunk_size: int ,
-        overlap: int 
+        max_chunk_size: int,
+        overlap: int,
+        min_chunk_size: int = 210,
     ) -> List[Segment]:
 
-        if not segments:
-            return []
+        final_chunks: List[Segment] = []
 
-        chunks: List[Segment] = []
-        i = 0
-        while i < len(segments):
-            chunk_texts = []
-            chunk_start = segments[i].start
-            chunk_end = segments[i].end
-            word_count = 0
-            seg_idx = i
+        current_segments: List[Segment] = []
+        current_word_count = 0
+        current_avg_emb: Optional[List[float]] = None
 
-            while seg_idx < len(segments) and word_count < max_chunk_size:
-                seg = segments[seg_idx]
-                chunk_texts.append(seg.text)  
-                chunk_end = seg.end
-                word_count += len(seg.text.split())
-                seg_idx += 1
+        for seg in segments:
+            seg_words = seg.text.split()
+            seg_word_count = len(seg_words)
+            seg_emb = await self.embedding_client.embed_text(seg.text)
 
-            chunks.append(Segment(
-                text="\n".join(chunk_texts),
-                start=chunk_start,
-                end=chunk_end,
+            # start new chunk
+            if not current_segments:
+                current_segments.append(seg)
+                current_word_count = seg_word_count
+                current_avg_emb = seg_emb
+                continue
+
+            similarity = 1 - cosine(current_avg_emb, seg_emb)
+
+            can_fit_max = current_word_count + seg_word_count <= max_chunk_size
+            reached_min = current_word_count >= min_chunk_size
+
+            should_merge = (
+                not reached_min  # لازم نكمل لحد المينيمم
+                or (can_fit_max and similarity >= self.similarity_threshold)
+            )
+
+            if should_merge and can_fit_max:
+                # merge
+                total_words = current_word_count + seg_word_count
+
+                current_avg_emb = [
+                    (a * current_word_count + b * seg_word_count) / total_words
+                    for a, b in zip(current_avg_emb, seg_emb)
+                ]
+
+                current_segments.append(seg)
+                current_word_count = total_words
+
+            else:
+                # finalize chunk
+                chunk_text = " ".join([s.text for s in current_segments])
+
+                final_chunks.append(Segment(
+                    text=chunk_text,
+                    start=current_segments[0].start,
+                    end=current_segments[-1].end,
+                    speakers=None
+                ))
+
+                # ====== OVERLAP (WORDS, NOT SEGMENTS) ======
+                words = chunk_text.split()
+                overlap_words = words[-overlap:] if overlap < len(words) else words
+                overlap_text = " ".join(overlap_words)
+
+                # new chunk يبدأ بالـ overlap
+                current_segments = []
+                current_word_count = 0
+                current_avg_emb = None
+
+                if overlap_words:
+                    overlap_segment = Segment(
+                        text=overlap_text,
+                        start=current_segments[-1].start if current_segments else seg.start,
+                        end=current_segments[-1].end if current_segments else seg.end,
+                        speakers=None
+                    )
+                    current_segments.append(overlap_segment)
+                    current_word_count = len(overlap_words)
+
+                # add current segment بعد overlap
+                current_segments.append(seg)
+                current_word_count += seg_word_count
+                current_avg_emb = seg_emb
+
+        # آخر chunk
+        if current_segments:
+            chunk_text = " ".join([s.text for s in current_segments])
+
+            final_chunks.append(Segment(
+                text=chunk_text,
+                start=current_segments[0].start,
+                end=current_segments[-1].end,
                 speakers=None
             ))
 
-            if seg_idx >= len(segments):
-                break
-
-            overlap_count = 0
-            overlap_words = 0
-            back_idx = seg_idx - 1
-            while back_idx >= i and overlap_words < overlap:
-                overlap_words += len(segments[back_idx].text.split())
-                back_idx -= 1
-                overlap_count += 1
-            i = seg_idx - overlap_count  
-
-        embeddings = []
-        for chunk in chunks:
-            emb = await self.embedding_client.embed_text(chunk.text)
-            embeddings.append(emb)
-
-        final_chunks = []
-        current_chunk = chunks[0]
-        current_emb = embeddings[0]
-
-        for next_chunk, next_emb in zip(chunks[1:], embeddings[1:]):
-            similarity = 1 - cosine(current_emb, next_emb)
-
-            if similarity >= self.similarity_threshold:
-                merged_text = f"{current_chunk.text}\n{next_chunk.text}"
-                current_chunk = Segment(
-                    text=merged_text,
-                    start=current_chunk.start,
-                    end=next_chunk.end,
-                    speakers=current_chunk.speakers
-                )
-                current_emb = [(a + b) / 2 for a, b in zip(current_emb, next_emb)]
-            else:
-                final_chunks.append(current_chunk)
-                current_chunk = next_chunk
-                current_emb = next_emb
-
-        final_chunks.append(current_chunk)
         return final_chunks

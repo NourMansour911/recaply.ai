@@ -93,7 +93,7 @@ class BaseNormalizer(ABC):
                 continue
 
             if i > 0:
-                merged_parts.append("----------")
+                merged_parts.append("----")
 
             if seg.speakers:
                 speakers_str = ", ".join(seg.speakers)
