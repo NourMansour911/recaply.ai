@@ -1,10 +1,10 @@
-import warnings
+
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 from core import app_exception_handler,get_settings
 from core.app_exceptions import AppException
 from contextlib import asynccontextmanager
-from routers import files_router,projects_router,vectordb_router
+from routers import files_router,projects_router,vectordb_router,workspace_router
 from helpers.logger import get_logger
 from integrations import get_whisper_provider
 from integrations.vector_db import VectorDBFactory
@@ -53,6 +53,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_exception_handler(AppException, app_exception_handler)
 
+app.include_router(workspace_router.workspace_route)
 app.include_router(files_router.files_route)
 app.include_router(projects_router.projects_route)
 app.include_router(vectordb_router.vectordb_route)
