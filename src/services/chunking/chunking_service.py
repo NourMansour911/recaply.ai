@@ -1,4 +1,4 @@
-import logging
+from helpers.logger import get_logger
 from schemas import NormalizedFileData
 from integrations.llm import LLMInterface
 import uuid
@@ -11,7 +11,7 @@ from models.chunk_model import ChunkMetadata
 from .semantic_chunking import SemanticChunkingService
 from .merge_chunking import MergeChunkingService
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ChunkingService:
@@ -30,7 +30,8 @@ class ChunkingService:
         max_chunk_size: int = 250 
     ):
         segments = file_data.normalized_file.segments or []
-        logger.info(f"Processing {segments[0].text} segments")
+        logger.info(f"Processing {segments[0]} segments")
+        logger.info(f"Processing {segments[1]} segments")
         if not segments:
             return [], [], [], []
 

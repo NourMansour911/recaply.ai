@@ -1,6 +1,8 @@
 from typing import List
 from schemas import Segment
+from helpers.logger import get_logger
 
+logger = get_logger(__name__)
 class MergeChunkingService:
     
 

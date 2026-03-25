@@ -115,12 +115,9 @@ class BaseNormalizer(ABC):
                     seen.add(speaker)
                     speakers.append(speaker)
 
-        start = next((s.start for s in segments if s.start is not None), None)
-        end = next((s.end for s in reversed(segments) if s.end is not None), None)
-
         return Segment(
             text=merged_text,
-            start=start,
-            end=end,
+            start=segments[0].start,
+            end=segments[-1].end,
             speakers=speakers if speakers else None,
         )

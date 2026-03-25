@@ -63,7 +63,7 @@ class TextNormalizer(BaseNormalizer):
     def split_text_into_segments(
     self,
     text: str,
-    words_per_segment: int = 80
+    words_per_segment: int = 10
     ) -> List[Segment]:
 
         words = text.split()
