@@ -1,143 +1,76 @@
-import uuid
-import logging
 from typing import List
-
-from schemas import Segment, NormalizedFileData
-from models.chunk_model import ChunkMetadata
-from datetime import datetime
-
-from .utils import split_with_overlap, map_word_indices_to_timing
-
-logger = logging.getLogger(__name__)
-
+from schemas import Segment
+from scipy.spatial.distance import cosine  
 
 class SemanticChunkingService:
 
-    def __init__(self, embedding_client):
+    def __init__(self, embedding_client, similarity_threshold: float = 0.85):
         self.embedding_client = embedding_client
+        self.similarity_threshold = similarity_threshold
 
     async def run(
         self,
         segments: List[Segment],
-        file: NormalizedFileData,
-        project_iid: str,
-        tenant_id: str,
-        start_idx: int,
-        chunk_size: int = 300,
-        overlap: int = 50,
+        max_chunk_size: int,
+        overlap: int 
     ):
 
-        words, word_map = self._build_word_map(segments)
 
-        chunks = split_with_overlap(words, chunk_size, overlap)
+       
+        all_words = []
+        for seg in segments:
+            all_words.extend(seg.text.split())
 
-        timings = map_word_indices_to_timing(chunks, word_map)
+        
+        chunks_words = []
+        i = 0
+        while i < len(all_words):
+            end = min(i + max_chunk_size, len(all_words))
+            chunks_words.append(all_words[i:end])
+            if end >= len(all_words):
+                break
+            i = end - overlap
 
-        return await self._embed(
-            chunks,
-            timings,
-            file,
-            project_iid,
-            tenant_id,
-            start_idx
-        )
+       
+        chunks: List[Segment] = []
+        for chunk in chunks_words:
+            text = " ".join(chunk)
+            chunks.append(Segment(text=text, start=None, end=None, speakers=None))
 
-    async def embed_prebuilt_chunks(
-        self,
-        chunks: List[Segment],
-        file: NormalizedFileData,
-        project_iid: str,
-        tenant_id: str,
-        start_idx: int,
-    ):
-        texts, vectors, ids, metas = [], [], [], []
-
-        for i, chunk in enumerate(chunks):
+        
+        embeddings = []
+        for chunk in chunks:
             emb = await self.embedding_client.embed_text(chunk.text)
+            embeddings.append(emb)
 
-            metadata = ChunkMetadata(
-                speakers=[],
-                word_count=len(chunk.text.split()),
-                file_id=file.file_id,
-                file_name=file.file_name,
-                file_type=file.file_type,
-                file_order=file.file_order,
-                language=file.normalized_file.language,
-                tenant_id=tenant_id,
-                project_iid=str(project_iid),
-                chunk_order=start_idx + i,
-                created_at=datetime.now().isoformat(),
-                start=chunk.start,
-                end=chunk.end,
-            )
+        
+        final_chunks = []
+        if not chunks:
+            return final_chunks
 
-            texts.append(chunk.text)
-            vectors.append(emb)
-            ids.append(str(uuid.uuid4()))
-            metas.append(metadata)
+        current_chunk = chunks[0]
+        current_emb = embeddings[0]
 
-        return texts, vectors, ids, metas
+        for next_chunk, next_emb in zip(chunks[1:], embeddings[1:]):
+            similarity = 1 - cosine(current_emb, next_emb)
+            if similarity >= self.similarity_threshold:
+                
+                merged_text = f"{current_chunk.text}\n{next_chunk.text}"
+                current_chunk = Segment(
+                    text=merged_text,
+                    start=current_chunk.start,
+                    end=next_chunk.end,
+                    speakers=current_chunk.speakers  
+                )
+                
+                current_emb = [(a + b) / 2 for a, b in zip(current_emb, next_emb)]
+            else:
+                final_chunks.append(current_chunk)
+                current_chunk = next_chunk
+                current_emb = next_emb
 
-    def _build_word_map(self, segments: List[Segment]):
-        words = []
-        word_map = []
+       
+        final_chunks.append(current_chunk)
 
-        for idx, seg in enumerate(segments):
-            seg_words = seg.text.split()
 
-            for w in seg_words:
-                words.append(w)
-                word_map.append({
-                    "start": seg.start,
-                    "end": seg.end
-                })
-
-            if idx < len(segments) - 1:
-                words.append("__SEP__")
-                word_map.append({
-                    "start": seg.end,
-                    "end": seg.end
-                })
-
-        return words, word_map
-
-    async def _embed(
-        self,
-        chunks,
-        timings,
-        file,
-        project_iid,
-        tenant_id,
-        start_idx
-    ):
-        texts, vectors, ids, metas = [], [], [], []
-
-        for i, (chunk_words, timing) in enumerate(zip(chunks, timings)):
-
-            text = " ".join(chunk_words)
-            text = text.replace(" __SEP__ ", "\n\n").replace("__SEP__", "\n\n")
-
-            emb = await self.embedding_client.embed_text(text)
-
-            metadata = ChunkMetadata(
-                speakers=[],
-                word_count=len(chunk_words),
-                file_id=file.file_id,
-                file_name=file.file_name,
-                file_type=file.file_type,
-                file_order=file.file_order,
-                language=file.normalized_file.language,
-                tenant_id=tenant_id,
-                project_iid=str(project_iid),
-                chunk_order=start_idx + i,
-                created_at=datetime.now().isoformat(),
-                start=timing.get("start"),
-                end=timing.get("end"),
-            )
-
-            texts.append(text)
-            vectors.append(emb)
-            ids.append(str(uuid.uuid4()))
-            metas.append(metadata)
-
-        return texts, vectors, ids, metas
+        return final_chunks

@@ -80,7 +80,6 @@ class TextNormalizer(BaseNormalizer):
 
             segments.append(
                 Segment(
-                    segment_id=f"seg_{segment_counter}",
                     text=segment_text,
                     start=0.0,  
                     end=0.0,

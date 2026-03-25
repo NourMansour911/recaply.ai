@@ -78,7 +78,7 @@ class AudioNormalizer(BaseNormalizer):
 
             segment_objects = [
             Segment(
-                segment_id=f"seg_{segment.id}",
+                
                 text=segment.text.strip(),
                 start=float(segment.start),
                 end=float(segment.end),

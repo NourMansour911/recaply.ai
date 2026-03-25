@@ -44,7 +44,6 @@ class SubtitleNormalizer(BaseNormalizer):
             
             segment_objects = [
                 Segment(
-                    segment_id=seg["segment_id"],
                     text=seg["text"],
                     start=seg["start"],
                     end=seg["end"],
@@ -87,7 +86,6 @@ class SubtitleNormalizer(BaseNormalizer):
                 
                 segments.append(
                     Segment(
-                        segment_id=f"seg_{i}",
                         text=sub.text.strip().replace('\n', ' '),
                         start=start_time,
                         end=end_time,
@@ -135,7 +133,6 @@ class SubtitleNormalizer(BaseNormalizer):
                 
                 segments.append(
                 Segment(
-                    segment_id=f"seg_{i}",
                     text=caption.text.strip().replace('\n', ' '),
                     start=start_time,
                     end=end_time,

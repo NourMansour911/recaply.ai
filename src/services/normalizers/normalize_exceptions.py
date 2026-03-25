@@ -141,7 +141,6 @@ class SegmentProcessingException(BaseNormalizeException):
     def __init__(
         self,
         file_name: Optional[str] = None,
-        segment_id: Optional[str] = None,
         processing_error: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
     ):
@@ -149,5 +148,5 @@ class SegmentProcessingException(BaseNormalizeException):
             message="Segment processing failed",
             error_code="SEGMENT_PROCESSING_FAILED",
             file_name=file_name,
-            details={"segment_id": segment_id, "processing_error": processing_error, **(details or {})},
+            details={"processing_error": processing_error, **(details or {})},
         )

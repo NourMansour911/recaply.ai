@@ -10,7 +10,6 @@ class FileType(str, Enum):
     PDF = "pdf"
 
 class Segment(BaseModel):
-    segment_id: str = Field(..., description="Unique identifier for the segment")
     text: str = Field(..., description="Content of the segment")
     start: Optional[float] = Field(None,  description="Start time in seconds", )
     end: Optional[float] = Field(None,  description="End time in seconds", )

@@ -1,76 +1,47 @@
-import logging
 from typing import List
 from schemas import Segment
 
-logger = logging.getLogger(__name__)
-
-
 class MergeChunkingService:
+    
 
-    def __init__(self, target_words: int = 50, max_words: int = 80):
-        self.target_words = target_words
-        self.max_words = max_words
-
-    async def run(self, segments: List[Segment]) -> List[Segment]:
-        merged = []
-        current = []
+    async def run(self, segments: List[Segment],max_chunk_size: int  ) -> List[Segment]:
+        merged_chunks = []
+        current_chunk = []
         current_words = 0
 
         for seg in segments:
-            words = len(seg.text.split())
+            seg_words = len(seg.text.split())
+            seg_chars = len(seg.text)
 
-            if current_words < self.target_words:
-                current.append(seg)
-                current_words += words
-                continue
-
-            if current_words + words > self.max_words:
-                merged.append(self._build_chunk(current))
-                current = [seg]
-                current_words = words
+            if current_words + seg_words > max_chunk_size:
+                if current_chunk:
+                    merged_text = "\n".join([s.text for s in current_chunk])
+                    merged_chunks.append(
+                        Segment(
+                            text=merged_text,
+                            start=current_chunk[0].start,
+                            end=current_chunk[-1].end,
+                            speakers=list({s for seg in current_chunk if seg.speakers for s in seg.speakers})
+                        )
+                    )
+                current_chunk = [seg]
+                current_words = seg_words
+                current_chars = seg_chars
             else:
-                current.append(seg)
-                current_words += words
+                current_chunk.append(seg)
+                current_words += seg_words
+                current_chars += seg_chars
 
-        if current:
-            merged.append(self._build_chunk(current))
+        #
+        if current_chunk:
+            merged_text = "\n".join([s.text for s in current_chunk])
+            merged_chunks.append(
+                Segment(
+                    text=merged_text,
+                    start=current_chunk[0].start,
+                    end=current_chunk[-1].end,
+                    speakers=list({s for seg in current_chunk if seg.speakers for s in seg.speakers})
+                )
+            )
 
-        return merged
-
-    def _format_speaker(self, speakers):
-        if not speakers:
-            return None
-
-        if isinstance(speakers, list):
-            speakers = ", ".join(speakers)
-
-        speakers = str(speakers).strip().lower()
-
-        if speakers in ["speaker", "unknown", "none", ""]:
-            return None
-
-        return speakers
-
-    def _build_chunk(self, group: List[Segment]) -> Segment:
-        lines = []
-
-        for seg in group:
-            speaker = self._format_speaker(seg.speakers)
-
-            if speaker:
-                lines.append(f"[{speaker}]: {seg.text.strip()}")
-            else:
-                lines.append(seg.text.strip())
-
-        text = "\n".join(lines)
-
-        start = next((s.start for s in group if s.start is not None), None)
-        end = next((s.end for s in reversed(group) if s.end is not None), None)
-
-        return Segment(
-            segment_id=f"merged-{group[0].segment_id}",
-            text=text,
-            start=start,
-            end=end,
-            speakers=None
-        )
+        return merged_chunks

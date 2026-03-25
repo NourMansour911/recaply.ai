@@ -35,7 +35,7 @@ class BaseNormalizer(ABC):
                     end_idx = min(start_idx + max_words, word_count)
                     chunk_text = " ".join(words[start_idx:end_idx])
                     merged_segments.append(Segment(
-                        segment_id=f"{seg.segment_id}_part{chunk_order}",
+                        
                         text=chunk_text,
                         start=seg.start,
                         end=seg.end,
@@ -84,21 +84,43 @@ class BaseNormalizer(ABC):
     def _merge_window(self, segments: List[Segment]) -> Segment:
         if not segments:
             raise ValueError("Segments list cannot be empty")
-        
+
         merged_parts = []
 
-        for seg in segments:
-            speaker = seg.speakers if seg.speakers else None
+        for i, seg in enumerate(segments):
             text = seg.text.strip()
-            merged_parts.append(f"[{speaker}]: {text}")
+            if not text:
+                continue
+
+            if i > 0:
+                merged_parts.append("----------")
+
+            if seg.speakers:
+                speakers_str = ", ".join(seg.speakers)
+                merged_parts.append(f"[{speakers_str}]: {text}")
+            else:
+                merged_parts.append(text)
 
         merged_text = "\n".join(merged_parts)
 
+    
+        seen = set()
+        speakers = []
+
+        for seg in segments:
+            if not seg.speakers:
+                continue
+            for speaker in seg.speakers:
+                if speaker not in seen:
+                    seen.add(speaker)
+                    speakers.append(speaker)
+
+        start = next((s.start for s in segments if s.start is not None), None)
+        end = next((s.end for s in reversed(segments) if s.end is not None), None)
+
         return Segment(
-            segment_id=f"chunk_{segments[0].segment_id}_{segments[-1].segment_id}",
             text=merged_text,
-            start=segments[0].start,
-            end=segments[-1].end,
-            speakers=", ".join(filter(None, {seg.speakers for seg in segments})) or None,
-            
+            start=start,
+            end=end,
+            speakers=speakers if speakers else None,
         )
