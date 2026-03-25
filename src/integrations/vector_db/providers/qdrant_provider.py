@@ -297,16 +297,16 @@ class QdrantDBProvider(VectorDBInterface):
     ) -> bool:
 
         try:
-            if not self.is_collection_existed(collection_name):
-
-                size = self.vector_size
-
-                self.create_collection(
+            
+            if self.is_collection_existed(collection_name):
+                self.delete_collection(collection_name)
+                logger.info(f"Deleted collection: {collection_name}")
+            
+            self.create_collection(
                     collection_name=collection_name,
-                    embedding_size=size
+                    embedding_size=self.vector_size
                 )
 
-                logger.info(f"Created collection: {collection_name} (dim={size})")
 
             return True
 

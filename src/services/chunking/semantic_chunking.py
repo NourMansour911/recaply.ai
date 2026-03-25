@@ -30,7 +30,7 @@ class SemanticChunkingService:
             seg_word_count = len(seg_words)
             seg_emb = await self.embedding_client.embed_text(seg.text)
 
-            # start new chunk
+            
             if not current_segments:
                 current_segments.append(seg)
                 current_word_count = seg_word_count
@@ -43,12 +43,12 @@ class SemanticChunkingService:
             reached_min = current_word_count >= min_chunk_size
 
             should_merge = (
-                not reached_min  # لازم نكمل لحد المينيمم
+                not reached_min  
                 or (can_fit_max and similarity >= self.similarity_threshold)
             )
 
             if should_merge and can_fit_max:
-                # merge
+                
                 total_words = current_word_count + seg_word_count
 
                 current_avg_emb = [
@@ -60,7 +60,7 @@ class SemanticChunkingService:
                 current_word_count = total_words
 
             else:
-                # finalize chunk
+                
                 chunk_text = " ".join([s.text for s in current_segments])
 
                 final_chunks.append(Segment(
@@ -70,12 +70,12 @@ class SemanticChunkingService:
                     speakers=None
                 ))
 
-                # ====== OVERLAP (WORDS, NOT SEGMENTS) ======
+                
                 words = chunk_text.split()
                 overlap_words = words[-overlap:] if overlap < len(words) else words
                 overlap_text = " ".join(overlap_words)
 
-                # new chunk يبدأ بالـ overlap
+                
                 current_segments = []
                 current_word_count = 0
                 current_avg_emb = None
@@ -90,12 +90,12 @@ class SemanticChunkingService:
                     current_segments.append(overlap_segment)
                     current_word_count = len(overlap_words)
 
-                # add current segment بعد overlap
+                
                 current_segments.append(seg)
                 current_word_count += seg_word_count
                 current_avg_emb = seg_emb
 
-        # آخر chunk
+        
         if current_segments:
             chunk_text = " ".join([s.text for s in current_segments])
 

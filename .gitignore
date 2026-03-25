@@ -1,3 +1,5 @@
 logs
 .env
 storage
+__pycache__/
+*.py[cod]
