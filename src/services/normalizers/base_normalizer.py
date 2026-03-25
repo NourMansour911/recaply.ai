@@ -88,7 +88,7 @@ class BaseNormalizer(ABC):
         merged_parts = []
 
         for seg in segments:
-            speaker = seg.speakers if seg.speakers else "speaker"
+            speaker = seg.speakers if seg.speakers else None
             text = seg.text.strip()
             merged_parts.append(f"[{speaker}]: {text}")
 

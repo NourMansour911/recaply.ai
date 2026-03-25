@@ -13,6 +13,8 @@ class ChunkMetadata(BaseModel):
     chunk_order: int = Field(..., description="Order of the chunk in the document")
     created_at: str = Field(..., description="Creation timestamp")
     word_count: int = Field(..., description="Word count in chunk")
+    start: Optional[float] = Field(None, description="Start time in seconds")
+    end: Optional[float] = Field(None, description="End time in seconds")
     speakers: Optional[List[str]] = Field([], description="List of unique speakers in the chunk")
 
 

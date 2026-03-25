@@ -1,96 +1,56 @@
-from helpers import get_logger
-from schemas import NormalizedFileData, Segment
-import uuid
-from datetime import datetime
-from typing import List
-from integrations.llm import LLMInterface
+import logging
+from typing import List, Tuple
+
+from schemas import NormalizedFileData
 from models.chunk_model import ChunkMetadata
+from integrations.llm import LLMInterface
 
+from .utils import has_speakers
+from .merge_chunking import MergeChunkingService
+from .semantic_chunking import SemanticChunkingService
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ChunkingService:
-    def __init__(
-        self,
-        embedding_client : LLMInterface,
-    ):
+    def __init__(self, embedding_client: LLMInterface):
         self.embedding_client = embedding_client
-    
-    
-    
-    
-    async def process_file_chunks(self, file_data: NormalizedFileData, project_iid: str, tenant_id: str,idx: int):
-        
+        self.semantic_service = SemanticChunkingService(embedding_client)
+        self.merge_service = MergeChunkingService()
 
-        segments = file_data.normalized_file.segments
-        
-        texts, vectors, record_ids, metadatas = await self._embed_and_prepare_chunks(
-            idx=idx,
-            chunks= segments, 
-            file= file_data, 
-            project_iid= str(project_iid),
-            tenant_id= tenant_id,
-        )
-        
-        return texts, vectors, record_ids, metadatas
-
-
-
-    async def _embed_and_prepare_chunks(
+    async def process_file_chunks(
         self,
-        idx: int,
-        chunks: List[Segment],
-        file: NormalizedFileData,
+        file_data: NormalizedFileData,
         project_iid: str,
-        tenant_id: str
+        tenant_id: str,
+        idx: int
     ):
 
-        idx += len(chunks)
+        segments = file_data.normalized_file.segments or []
 
-    
-        texts = []
-        vectors = []
-        record_ids = list(range(idx, idx + len(chunks)))
-        metadatas: List[ChunkMetadata] = []
+        if not segments:
+            return [], [], [], []
 
-        for i, chunk in enumerate(chunks):
-                if not chunk.text or not chunk.text.strip():
-                    logger.warning(f"Skipping empty chunk {i}")
-                    continue
+        if has_speakers(segments):
+            logger.info("Using MERGE chunking")
 
-                embedding =  await self.embedding_client.embed_text(chunk.text.strip())
+            merged_segments = await self.merge_service.run(segments)
 
-                if not embedding:
-                    logger.warning(f"Skipping chunk {i} due to empty embedding")
-                    continue
+            return await self.semantic_service.embed_prebuilt_chunks(
+                chunks=merged_segments,
+                file=file_data,
+                project_iid=project_iid,
+                tenant_id=tenant_id,
+                start_idx=idx
+            )
 
-                
-                metadata=ChunkMetadata(
-                    speakers=chunk.speakers,
-                    word_count=len(chunk.text.split()),
-                    file_id=file.file_id,
-                    file_name=file.file_name,
-                    file_type=file.file_type,
-                    file_order=file.file_order,
-                    language=file.normalized_file.language,
-                    tenant_id=tenant_id,
-                    project_iid=str(project_iid),  
-                    chunk_order=i,
-                    created_at=datetime.now().isoformat(),
-                )
-                
+        else:
+            logger.info("Using SEMANTIC chunking")
 
-                
-                metadatas.append(metadata)
-
-                texts.append(chunk.text)
-                vectors.append(embedding)
-                record_ids.append(str(uuid.uuid4()))
-
-
-        
-      
-        return texts, vectors, record_ids, metadatas
-            
- 
+            return await self.semantic_service.run(
+                segments=segments,
+                file=file_data,
+                project_iid=project_iid,
+                tenant_id=tenant_id,
+                start_idx=idx
+            )
