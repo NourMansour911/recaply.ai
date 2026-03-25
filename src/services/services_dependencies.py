@@ -9,7 +9,7 @@ from integrations.vector_db import VectorDBInterface
 from .files.file_storage_service import FileStorageService
 from .files.file_detector_service import FileDetectorService
 from .files.file_validator_service import FileValidatorService
-from  .vectordb_service import VDBService
+from  .vdb_service.vectordb_service import VDBService
 from .chunking import ChunkingService 
 
 

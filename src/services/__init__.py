@@ -9,16 +9,14 @@ from .services_dependencies import get_file_detector
 from .services_dependencies import get_file_validator
 from .services_dependencies import get_storage_service
 from .services_dependencies import get_vdb_service
-from . import vectordb_service
-from .vectordb_service import VDBService
+from . import vdb_service
 
 __all__ = [
     "chunking",
     "files",
     "normalizers",
     "services_dependencies",
-    "vectordb_service",
-    "VDBService",
+    "vdb_service",
     "get_chunking_service",
     "get_file_detector",
     "get_file_validator",

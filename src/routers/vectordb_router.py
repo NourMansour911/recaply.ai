@@ -4,7 +4,8 @@ from core.main_dependencies import get_tenant_id
 from typing import List
 from schemas import SearchRequest
 from helpers.logger import get_logger
-from services import VDBService,get_vdb_service
+from services import get_vdb_service
+from services.vdb_service import VDBService
 from schemas.vectordb_schema import CollectionChunksResponse,ChunksQuerySchema
 
 logger = get_logger(__name__)
