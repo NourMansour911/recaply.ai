@@ -31,9 +31,10 @@ def get_file_validator(
 
 
 def get_chunking_service(
-   embedding_client  = Depends(get_embedding_client)
+   embedding_client  = Depends(get_embedding_client),
+   settings: Settings = Depends(get_settings),
 ) -> ChunkingService:
-    return ChunkingService(embedding_client)
+    return ChunkingService(embedding_client,settings=settings)
 
 
 def get_vdb_service(

@@ -23,12 +23,12 @@ class Settings(BaseSettings):
     MAX_PDF_SIZE_MB: int
     
     TO_BYTES: int
-
     
-    class Config:
-        env_file = ".env"
+    # Chunking
+    CHUNK_OVERLAP: int
+    CHUNK_MAX_SIZE: int
+    CHUNKS_SIMILARITY_THRESHOLD: float
 
- 
     LANGSMITH_API_KEY : str
     OPENAI_API_URL : str
     OPENAI_API_KEY : str

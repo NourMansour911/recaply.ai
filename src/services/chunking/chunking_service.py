@@ -1,7 +1,6 @@
 from helpers.logger import get_logger
 from schemas import NormalizedFileData
 from integrations.llm import LLMInterface
-import uuid
 from datetime import datetime
 from typing import List
 
@@ -10,37 +9,32 @@ from models.chunk_model import ChunkMetadata
 
 from .semantic_chunking import SemanticChunkingService
 from .merge_chunking import MergeChunkingService
+from core import Settings
 
 logger = get_logger(__name__)
 
 
 class ChunkingService:
-    def __init__(self, embedding_client: LLMInterface):
-        self.merge_service = MergeChunkingService()
+    def __init__(self, embedding_client: LLMInterface,settings=Settings):
+        self.settings = settings
         self.embedding_client = embedding_client
-        self.semantic_service = SemanticChunkingService(embedding_client=self.embedding_client)
-
+        self.merge_service = MergeChunkingService()
+        self.semantic_service = SemanticChunkingService(embedding_client=self.embedding_client,similarity_threshold=self.settings.CHUNKS_SIMILARITY_THRESHOLD)
     async def process_file_chunks(
         self,
         file_data: NormalizedFileData,
         project_iid: str,
         tenant_id: str,
         idx: int,
-        overlap: int = 10 ,
-        max_chunk_size: int = 250 
     ):
         segments = file_data.normalized_file.segments or []
-        logger.info(f"Processing {segments[0]} segments")
-        logger.info(f"Processing {segments[1]} segments")
         if not segments:
             return [], [], [], []
 
         if any(seg.speakers for seg in segments):
-            logger.info("Using MERGE chunking based on speakers")
-            chunks = await self.merge_service.run(segments,max_chunk_size=max_chunk_size)
+            chunks = await self.merge_service.run(segments,max_chunk_size=self.settings.CHUNK_MAX_SIZE)
         else:
-            logger.info("Using SEMANTIC chunking")
-            chunks = await self.semantic_service.run(segments,max_chunk_size=max_chunk_size,overlap=overlap)
+            chunks = await self.semantic_service.run(segments,max_chunk_size=self.settings.CHUNK_MAX_SIZE,overlap=self.settings.CHUNK_OVERLAP)
 
         return await self.embed(
             chunks=chunks,

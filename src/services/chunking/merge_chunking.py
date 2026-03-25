@@ -34,7 +34,7 @@ class MergeChunkingService:
                 current_words += seg_words
                 current_chars += seg_chars
 
-        #
+        
         if current_chunk:
             merged_text = "\n".join([s.text for s in current_chunk])
             merged_chunks.append(
