@@ -9,7 +9,7 @@ from .repo_exceptions import (
     ProjectDeletionException
 )
 
-logger = get_logger("project_repo", level=logging.DEBUG)  # Logger for this layer
+logger = get_logger("project_repo", level=logging.DEBUG)  
 
 class ProjectRepo():
 
@@ -97,10 +97,13 @@ class ProjectRepo():
             logger.error(f"Error fetching all projects for page {page}: {e}", exc_info=True)
             raise ProjectFetchException() from e
 
-    async def project_exists(self, project_id: str) -> bool:
+    async def project_exists(self, project_id: str,tenant_id:str) -> bool:
         try:
             logger.debug(f"Checking existence of project: {project_id}")
-            record = await self.collection.find_one({"project_id": project_id})
+            record = await self.collection.find_one({
+                "project_id": project_id,
+                "tenant_id": tenant_id
+            })
             exists = record is not None
             logger.info(f"Project {project_id} exists: {exists}")
             return exists
@@ -108,10 +111,13 @@ class ProjectRepo():
             logger.error(f"Error checking existence of project {project_id}: {e}", exc_info=True)
             return False
 
-    async def delete_project(self, project_id: str) -> bool:
+    async def delete_project(self, project_id: str,tenant_id:str) -> bool:
         try:
             logger.debug(f"Attempting to delete project: {project_id}")
-            result = await self.collection.delete_one({"project_id": project_id})
+            result = await self.collection.delete_one({
+                "project_id": project_id,
+                "tenant_id": tenant_id
+            })
             deleted = result.deleted_count > 0
             if deleted:
                 logger.info(f"Project {project_id} deleted successfully")

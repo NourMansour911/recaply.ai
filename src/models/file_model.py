@@ -27,15 +27,6 @@ class FileModel(BaseModel):
             {
                 "key": [
                     ("file_project_iid", 1),
-                    ("file_tenant_id", 1)
-                ],
-                "name": "file_project_id_index_1",
-                "unique": False
-            },
-            {
-                "key": [
-                    ("file_project_iid", 1),
-                    ("file_tenant_id", 1),
                     ("file_name", 1)
                 ],
                 "name": "file_name_index_1",
