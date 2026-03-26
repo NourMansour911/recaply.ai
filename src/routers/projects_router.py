@@ -33,7 +33,7 @@ async def delete_project(
 
 
 @projects_route.delete(
-    "/all/tenant",
+    "/all",
     response_model=DeleteTenantResponse,
     description="Delete ALL data for a tenant (projects, files, vectors, etc.)"
 )
