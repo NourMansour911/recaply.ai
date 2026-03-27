@@ -1,6 +1,6 @@
 from models import ProjectModel
 from helpers.enums import DBEnum
-from helpers.logger import get_logger  
+from helpers.logger import get_logger
 import logging
 from .repo_exceptions import (
     ProjectCreationException,
@@ -9,7 +9,7 @@ from .repo_exceptions import (
     ProjectDeletionException
 )
 
-logger = get_logger("project_repo", level=logging.DEBUG)  
+logger = get_logger("project_repo", level=logging.DEBUG)
 
 
 class ProjectRepo:
@@ -44,7 +44,6 @@ class ProjectRepo:
                 collection_name=DBEnum.COLLECTION_PROJECT_NAME.value
             ) from e
 
-
     async def create_project(self, project: ProjectModel):
         try:
             result = await self.collection.insert_one(
@@ -53,10 +52,7 @@ class ProjectRepo:
             project.iid = result.inserted_id
             return project
         except Exception as e:
-            raise ProjectCreationException(
-                project_id=getattr(project, "project_id", None)
-            ) from e
-
+            raise ProjectCreationException(project_id=getattr(project, "project_id", None)) from e
 
     async def get_project(self, project_id: str, tenant_id: str):
         try:
@@ -84,7 +80,6 @@ class ProjectRepo:
         except Exception:
             return False
 
-
     async def delete_project_by_iid(self, project_iid):
         try:
             result = await self.collection.delete_one({"_id": project_iid})
@@ -100,8 +95,8 @@ class ProjectRepo:
             return result.deleted_count
         except Exception as e:
             raise ProjectDeletionException(project_id=tenant_id) from e
-        
-    async def get_project_or_create_one(self,tenant_id: str,project_id: str) -> ProjectModel:
+
+    async def get_project_or_create_one(self, tenant_id: str, project_id: str) -> ProjectModel:
         try:
             logger.debug(f"Fetching project with ID: {project_id}")
             record = await self.collection.find_one({
@@ -114,7 +109,7 @@ class ProjectRepo:
                 project = ProjectModel(project_id=project_id, tenant_id=tenant_id)
                 project = await self.create_project(project=project)
                 return project
-            
+
             logger.info(f"Project found with ID: {project_id}")
             return ProjectModel(**record)
         except Exception as e:

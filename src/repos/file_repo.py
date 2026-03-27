@@ -40,7 +40,6 @@ class FileRepo:
         except Exception as e:
             raise DatabaseConnectionException() from e
 
-
     async def add_file(self, file: FileModel):
         try:
             result = await self.collection.insert_one(
@@ -50,7 +49,6 @@ class FileRepo:
             return file.iid
         except Exception as e:
             raise InsertFileException(file_name=file.file_name) from e
-
 
     async def get_file(self, project_iid: str, file_name: str) -> FileModel | None:
         try:
@@ -71,7 +69,6 @@ class FileRepo:
             return [FileModel(**record) for record in result]
         except Exception as e:
             raise FetchFileException() from e
-
 
     async def delete_files_by_project(self, project_iid):
         result = await self.collection.delete_many({
