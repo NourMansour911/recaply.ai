@@ -100,3 +100,23 @@ class ProjectRepo:
             return result.deleted_count
         except Exception as e:
             raise ProjectDeletionException(project_id=tenant_id) from e
+        
+    async def get_project_or_create_one(self,tenant_id: str,project_id: str) -> ProjectModel:
+        try:
+            logger.debug(f"Fetching project with ID: {project_id}")
+            record = await self.collection.find_one({
+                "project_id": project_id,
+                "tenant_id": tenant_id
+            })
+
+            if record is None:
+                logger.info(f"No project found with ID {project_id}, creating new one")
+                project = ProjectModel(project_id=project_id, tenant_id=tenant_id)
+                project = await self.create_project(project=project)
+                return project
+            
+            logger.info(f"Project found with ID: {project_id}")
+            return ProjectModel(**record)
+        except Exception as e:
+            logger.error(f"Error fetching or creating project with ID {project_id}: {e}", exc_info=True)
+            raise ProjectFetchException(project_id=project_id) from e

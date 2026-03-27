@@ -19,10 +19,21 @@ def get_database_path(db_name: str):
 
 
 def get_project_path(tenant_id: str, project_id: str, stage: str = "raw") -> str:
-    if stage not in ["raw", "normalized", "temp"]:
+    if stage not in ["raw", "normalized", "temp","all"]:
         raise ValueError(f"Unknown stage: {stage}")
-
+    
+    if stage == "all":
+        project_path = os.path.join(BASE_DIR, settings.FILES_PATH, tenant_id, project_id)
+        return project_path
+    
     project_path = os.path.join(BASE_DIR, settings.FILES_PATH, tenant_id, project_id, stage)
     os.makedirs(project_path, exist_ok=True)
     logger.debug(f"Project {stage} path: {project_path}")
     return project_path
+
+def get_tenant_path(tenant_id: str) -> str:
+    return os.path.join(
+        BASE_DIR,
+        settings.FILES_PATH,
+        tenant_id
+    )

@@ -3,6 +3,7 @@
 from . import disk_helper
 from .disk_helper import get_database_path
 from .disk_helper import get_project_path
+from .disk_helper import get_tenant_path
 from . import enums
 from . import ffmpeg_utils
 from .ffmpeg_utils import cleanup_temp_file
@@ -19,5 +20,6 @@ __all__ = [
     "get_database_path",
     "get_logger",
     "get_project_path",
+    "get_tenant_path",
     "preprocess_audio",
 ]
