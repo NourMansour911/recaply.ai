@@ -6,16 +6,16 @@ from . import base_normalizer
 from .base_normalizer import BaseNormalizer
 from . import factory
 from .factory import NormalizerFactory
-from . import normalize_exceptions
-from .normalize_exceptions import AudioProcessingException
-from .normalize_exceptions import BaseNormalizeException
-from .normalize_exceptions import FFmpegException
-from .normalize_exceptions import InvalidTimeFormatException
-from .normalize_exceptions import NormalizationException
-from .normalize_exceptions import SegmentProcessingException
-from .normalize_exceptions import SubtitleParsingException
-from .normalize_exceptions import TextExtractionException
-from .normalize_exceptions import TranscriptionException
+from . import normalizers_exceptions
+from .normalizers_exceptions import AudioProcessingException
+from .normalizers_exceptions import BaseNormalizeException
+from .normalizers_exceptions import FFmpegException
+from .normalizers_exceptions import InvalidTimeFormatException
+from .normalizers_exceptions import NormalizationException
+from .normalizers_exceptions import SegmentProcessingException
+from .normalizers_exceptions import SubtitleParsingException
+from .normalizers_exceptions import TextExtractionException
+from .normalizers_exceptions import TranscriptionException
 from . import subtitle_normalizer
 from .subtitle_normalizer import SubtitleNormalizer
 from . import text_normalizer
@@ -25,7 +25,7 @@ __all__ = [
     "audio_normalizer",
     "base_normalizer",
     "factory",
-    "normalize_exceptions",
+    "normalizers_exceptions",
     "subtitle_normalizer",
     "text_normalizer",
     "AudioNormalizer",

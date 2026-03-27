@@ -1,34 +1,24 @@
 import re
 from typing import List
 from .base_normalizer import BaseNormalizer
-from  .normalize_exceptions import (
-    SubtitleParsingException,
-    InvalidTimeFormatException
-)
+from .normalizers_exceptions import SubtitleParsingException, InvalidTimeFormatException
 from helpers.logger import get_logger
 import webvtt
 from pysrt import SubRipFile
 from schemas.normalized_schemas import Segment, NormalizedContent
 
-
 logger = get_logger(__name__)
 
 class SubtitleNormalizer(BaseNormalizer):
-    def __init__(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str ):
+    def __init__(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str):
         self.file_name = file_name
         self.file_path = file_path
         self.file_type = file_type
         self.tenant_id = tenant_id
         self.project_id = project_id
         self.language = language
-    
-    
-        
-    
+
     async def normalize(self) -> NormalizedContent:
-        
-        
-        
         try:
             if self.file_type == 'srt':
                 segments = self._parse_srt()
@@ -40,23 +30,17 @@ class SubtitleNormalizer(BaseNormalizer):
                     format_type=self.file_type,
                     parse_error="Unsupported subtitle format"
                 )
-            
-            
-            segment_objects = [
-                Segment(
-                    text=seg["text"],
-                    start=seg["start"],
-                    end=seg["end"],
-                    speakers=seg["speaker"],
-                    
-                ) for seg in segments
-            ]
+
+            segment_objects = [Segment(
+                text=seg["text"],
+                start=seg["start"],
+                end=seg["end"],
+                speakers=seg["speaker"],
+            ) for seg in segments]
+
             merged_segments = self.merge_small_segments(segment_objects)
-            
-            
-            result = self._create_normalized_file_model( self.language, merged_segments)
-            return result
-            
+            return self._create_normalized_file_model(self.language, merged_segments)
+
         except SubtitleParsingException:
             raise
         except Exception as e:
@@ -66,139 +50,85 @@ class SubtitleNormalizer(BaseNormalizer):
                 format_type=self.file_type,
                 parse_error=str(e)
             )
-    
+
     def _parse_srt(self) -> List[Segment]:
-        
         try:
             subs = SubRipFile.open(self.file_path, encoding='utf-8')
-            segments : list[Segment] = []
-            
-            for i, sub in enumerate(subs):
+            segments: list[Segment] = []
+            for sub in subs:
                 try:
                     start_time = self._srt_time_to_seconds(str(sub.start))
                     end_time = self._srt_time_to_seconds(str(sub.end))
-                except Exception as e:
+                except Exception:
                     raise InvalidTimeFormatException(
                         file_name=self.file_name,
                         time_string=f"{sub.start} -> {sub.end}",
                         format_type="SRT"
                     )
-                
-                segments.append(
-                    Segment(
-                        text=sub.text.strip().replace('\n', ' '),
-                        start=start_time,
-                        end=end_time,
-                        speakers=None,
-                        
-                    )
-                )
-
-            
+                segments.append(Segment(
+                    text=sub.text.strip().replace('\n', ' '),
+                    start=start_time,
+                    end=end_time,
+                    speakers=None,
+                ))
             return segments
         except SubtitleParsingException:
             raise
         except Exception as e:
-            logger.error(
-            "SRT parsing failed",
-            extra={
-                "file_name": self.file_name,
-                "tenant_id": self.tenant_id,
-                "project_id": self.project_id,
-                "error": str(e)
-            }
-        )
-            raise SubtitleParsingException(
-                file_name=self.file_name,
-                format_type="srt",
-                parse_error=f"SRT parsing failed: {str(e)}"
-            )
-    
+            logger.error("SRT parsing failed", extra={"file_name": self.file_name, "tenant_id": self.tenant_id, "project_id": self.project_id, "error": str(e)})
+            raise SubtitleParsingException(file_name=self.file_name, format_type="srt", parse_error=f"SRT parsing failed: {str(e)}")
+
     def _parse_vtt(self) -> List[Segment]:
-        
         try:
             vtt = webvtt.read(self.file_path)
-            segments : list[Segment] = []
-            
-            for i, caption in enumerate(vtt):
+            segments: list[Segment] = []
+            for caption in vtt:
                 try:
                     start_time = self._vtt_time_to_seconds(caption.start)
                     end_time = self._vtt_time_to_seconds(caption.end)
-                except Exception as e:
+                except Exception:
                     raise InvalidTimeFormatException(
                         file_name=self.file_name,
                         time_string=f"{caption.start} -> {caption.end}",
                         format_type="VTT"
                     )
-                
-                segments.append(
-                Segment(
+                segments.append(Segment(
                     text=caption.text.strip().replace('\n', ' '),
                     start=start_time,
                     end=end_time,
                     speakers=None,
-                    
-                )
-            )
-
-            
+                ))
             return segments
         except SubtitleParsingException:
             raise
         except Exception as e:
-            logger.error(
-            "VTT parsing failed",
-            extra={
-                "file_name": self.file_name,
-                "tenant_id": self.tenant_id,
-                "project_id": self.project_id,
-                "error": str(e)
-            }
-        )
-            raise SubtitleParsingException(
-                file_name=self.file_name,
-                format_type="vtt",
-                parse_error=f"VTT parsing failed: {str(e)}"
-            )
-    
+            logger.error("VTT parsing failed", extra={"file_name": self.file_name, "tenant_id": self.tenant_id, "project_id": self.project_id, "error": str(e)})
+            raise SubtitleParsingException(file_name=self.file_name, format_type="vtt", parse_error=f"VTT parsing failed: {str(e)}")
+
     def _srt_time_to_seconds(self, time_str: str) -> float:
-        
         try:
             hours, minutes, seconds, milliseconds = re.split('[:,]', time_str)
             return int(hours) * 3600 + int(minutes) * 60 + int(seconds) + int(milliseconds) / 1000
-        except Exception as e:
-            raise InvalidTimeFormatException(
-                file_name=self.file_name,
-                time_string=time_str,
-                format_type="SRT time conversion"
-            )
-    
+        except Exception:
+            raise InvalidTimeFormatException(file_name=self.file_name, time_string=time_str, format_type="SRT time conversion")
+
     def _vtt_time_to_seconds(self, time_str: str) -> float:
-        
         try:
             if '-->' in time_str:
                 time_str = time_str.split('-->')[0].strip()
-            
             parts = time_str.split(':')
             if len(parts) == 3:
                 hours, minutes, seconds = parts
                 if '.' in seconds:
                     secs, millis = seconds.split('.')
                     return int(hours) * 3600 + int(minutes) * 60 + int(secs) + int(millis) / 1000
-                else:
-                    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+                return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
             elif len(parts) == 2:
                 minutes, seconds = parts
                 if '.' in seconds:
                     secs, millis = seconds.split('.')
                     return int(minutes) * 60 + int(secs) + int(millis) / 1000
-                else:
-                    return int(minutes) * 60 + int(seconds)
-            else:
-                return 0.0
-        except Exception as e:
-            raise InvalidTimeFormatException(
-                file_name=self.file_name,
-                time_string=time_str,
-                format_type="VTT time conversion"
-            )
+                return int(minutes) * 60 + int(seconds)
+            return 0.0
+        except Exception:
+            raise InvalidTimeFormatException(file_name=self.file_name, time_string=time_str, format_type="VTT time conversion")
