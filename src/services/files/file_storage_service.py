@@ -1,9 +1,9 @@
 import os
 import aiofiles
-from helpers.logger import get_logger
-from helpers import get_project_path
 import uuid
 import re
+from helpers.logger import get_logger
+from helpers import get_project_path
 from fastapi import UploadFile
 from .files_exceptions import UploadFailedException
 
@@ -12,11 +12,11 @@ logger = get_logger(__name__)
 
 class FileStorageService:
 
-    def generate_file_path(self, original_filename: str,tenant_id: str,project_id: str,file_order: int):
-        project_path = get_project_path(tenant_id=tenant_id,project_id=project_id)
+    def generate_file_path(self, original_filename: str, tenant_id: str, project_id: str, file_order: int):
+        project_path = get_project_path(tenant_id=tenant_id, project_id=project_id)
         file_name = re.sub(r"[^\w.]", "_", original_filename).lower()
         unique_name = f"{uuid.uuid4()}_{file_name}"
-        file_path = os.path.join(project_path,str(file_order) ,unique_name)
+        file_path = os.path.join(project_path, str(file_order), unique_name)
         return file_path, original_filename, unique_name
 
     async def save_file(self, file: UploadFile, file_path: str):

@@ -1,25 +1,27 @@
 from helpers.logger import get_logger
-from schemas import NormalizedFileData
+from schemas import NormalizedFileData, Segment
+from models.chunk_model import ChunkMetadata
+from .semantic_chunking import SemanticChunkingService
+from .merge_chunking import MergeChunkingService
+from .chunking_exceptions import ChunkProcessingError, EmbeddingError
+from core import Settings
 from integrations.llm import LLMInterface
 from datetime import datetime
 from typing import List
-
-from schemas import Segment, NormalizedFileData
-from models.chunk_model import ChunkMetadata
-
-from .semantic_chunking import SemanticChunkingService
-from .merge_chunking import MergeChunkingService
-from core import Settings
 
 logger = get_logger(__name__)
 
 
 class ChunkingService:
-    def __init__(self, embedding_client: LLMInterface,settings=Settings):
+    def __init__(self, embedding_client: LLMInterface, settings=Settings):
         self.settings = settings
         self.embedding_client = embedding_client
         self.merge_service = MergeChunkingService()
-        self.semantic_service = SemanticChunkingService(embedding_client=self.embedding_client,similarity_threshold=self.settings.CHUNKS_SIMILARITY_THRESHOLD)
+        self.semantic_service = SemanticChunkingService(
+            embedding_client=self.embedding_client,
+            similarity_threshold=self.settings.CHUNKS_SIMILARITY_THRESHOLD
+        )
+
     async def process_file_chunks(
         self,
         file_data: NormalizedFileData,
@@ -31,19 +33,29 @@ class ChunkingService:
         if not segments:
             return [], [], [], []
 
-        if any(seg.speakers for seg in segments):
-            chunks = await self.merge_service.run(segments,max_chunk_size=self.settings.CHUNK_MAX_SIZE)
-        else:
-            chunks = await self.semantic_service.run(segments,max_chunk_size=self.settings.CHUNK_MAX_SIZE,overlap=self.settings.CHUNK_OVERLAP)
+        try:
+            if any(seg.speakers for seg in segments):
+                chunks = await self.merge_service.run(
+                    segments, max_chunk_size=self.settings.CHUNK_MAX_SIZE
+                )
+            else:
+                chunks = await self.semantic_service.run(
+                    segments,
+                    max_chunk_size=self.settings.CHUNK_MAX_SIZE,
+                    overlap=self.settings.CHUNK_OVERLAP
+                )
 
-        return await self.embed(
-            chunks=chunks,
-            file=file_data,
-            project_iid=project_iid,
-            tenant_id=tenant_id,
-            idx=idx
-        )
-        
+            return await self.embed(
+                chunks=chunks,
+                file=file_data,
+                project_iid=project_iid,
+                tenant_id=tenant_id,
+                idx=idx
+            )
+        except Exception as e:
+            logger.error("Failed to process file chunks", exc_info=True)
+            raise ChunkProcessingError(segment_index=idx, message=str(e))
+
     async def embed(
         self,
         chunks: List[Segment],
@@ -55,7 +67,11 @@ class ChunkingService:
         texts, vectors, ids, metas = [], [], [], []
 
         for i, chunk in enumerate(chunks):
-            emb = await self.embedding_client.embed_text(chunk.text)
+            try:
+                emb = await self.embedding_client.embed_text(chunk.text)
+            except Exception as e:
+                logger.error("Embedding failed", exc_info=True, extra={"chunk_index": i})
+                raise EmbeddingError(segment_index=i, message=str(e))
 
             metadata = ChunkMetadata(
                 speakers=chunk.speakers or [],
@@ -79,7 +95,3 @@ class ChunkingService:
             metas.append(metadata)
 
         return texts, vectors, ids, metas
-
-
-
-
