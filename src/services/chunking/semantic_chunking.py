@@ -1,5 +1,5 @@
 from typing import List, Optional
-from schemas import Segment
+from models import Segment
 from scipy.spatial.distance import cosine
 from helpers.logger import get_logger
 from .chunking_exceptions import ChunkProcessingError, EmbeddingError

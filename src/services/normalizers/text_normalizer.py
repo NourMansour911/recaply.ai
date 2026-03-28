@@ -2,22 +2,22 @@ from .base_normalizer import BaseNormalizer
 from .normalizers_exceptions import TextExtractionException
 from helpers.logger import get_logger
 import PyPDF2
-from schemas.normalized_schemas import Segment, NormalizedContent
+from models import Segment
 from typing import List
 
 logger = get_logger(__name__)
 
 class TextNormalizer(BaseNormalizer):
 
-    def __init__(self, file_path: str, file_name: str, file_type: str, tenant_id: str, project_id: str, language: str):
+    def __init__(self, file_path: str, file_name: str, file_type: str, tenant_id: str, project_id: str):
         self.file_path = file_path
         self.file_name = file_name
         self.file_type = file_type
         self.tenant_id = tenant_id
         self.project_id = project_id
-        self.language = language
+        
 
-    async def normalize(self) -> NormalizedContent:
+    async def normalize(self) :
         try:
             if self.file_type == 'txt':
                 text_content = self._read_text_file()
@@ -28,7 +28,7 @@ class TextNormalizer(BaseNormalizer):
 
             segment_objects = self.split_text_into_segments(text_content, words_per_segment=70)
             merged_segments = self.merge_small_segments(segment_objects)
-            return self._create_normalized_file_model(self.language, merged_segments)
+            return merged_segments
 
         except Exception as e:
             logger.error("Text normalization failed", extra={"file_name": self.file_name, "file_type": self.file_type, "tenant_id": self.tenant_id, "project_id": self.project_id, "error": str(e)})

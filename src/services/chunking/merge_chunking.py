@@ -1,5 +1,5 @@
 from typing import List
-from schemas import Segment
+from models import Segment
 from helpers.logger import get_logger
 from .chunking_exceptions import ChunkProcessingError
 

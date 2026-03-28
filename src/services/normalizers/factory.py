@@ -24,7 +24,6 @@ class NormalizerFactory:
                 file_type=file_type,
                 tenant_id=tenant_id,
                 project_id=project_id,
-                language=language
             )
         else:
             raise NormalizerException(message=f"Unsupported file type: {file_type}", details={"file_name": file_name})

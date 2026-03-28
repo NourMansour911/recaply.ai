@@ -5,6 +5,7 @@ from .chunk_model import ChunkMetadata
 from .chunk_model import VDBChunkPayload
 from . import file_model
 from .file_model import FileModel
+from .file_model import Segment
 from . import project_model
 from .project_model import ProjectModel
 
@@ -15,5 +16,6 @@ __all__ = [
     "ChunkMetadata",
     "FileModel",
     "ProjectModel",
+    "Segment",
     "VDBChunkPayload",
 ]

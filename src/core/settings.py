@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     
     # Chunking
     CHUNK_OVERLAP: int
+    CHUNK_MIN_SIZE: int
     CHUNK_MAX_SIZE: int
     CHUNKS_SIMILARITY_THRESHOLD: float
 

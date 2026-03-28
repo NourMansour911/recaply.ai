@@ -1,5 +1,5 @@
 from helpers.logger import get_logger
-from schemas import NormalizedFileData, Segment
+from models import  Segment,FileModel
 from models.chunk_model import ChunkMetadata
 from .semantic_chunking import SemanticChunkingService
 from .merge_chunking import MergeChunkingService
@@ -8,6 +8,7 @@ from core import Settings
 from integrations.llm import LLMInterface
 from datetime import datetime
 from typing import List
+
 
 logger = get_logger(__name__)
 
@@ -24,12 +25,10 @@ class ChunkingService:
 
     async def process_file_chunks(
         self,
-        file_data: NormalizedFileData,
-        project_iid: str,
-        tenant_id: str,
+        file_model: FileModel,
         idx: int,
     ):
-        segments = file_data.normalized_file.segments or []
+        segments = file_model.file_content or []
         if not segments:
             return [], [], [], []
 
@@ -42,14 +41,13 @@ class ChunkingService:
                 chunks = await self.semantic_service.run(
                     segments,
                     max_chunk_size=self.settings.CHUNK_MAX_SIZE,
-                    overlap=self.settings.CHUNK_OVERLAP
+                    overlap=self.settings.CHUNK_OVERLAP,
+                    min_chunk_size=self.settings.CHUNK_MIN_SIZE
                 )
 
             return await self.embed(
                 chunks=chunks,
-                file=file_data,
-                project_iid=project_iid,
-                tenant_id=tenant_id,
+                file_id=str(file_model.iid),
                 idx=idx
             )
         except Exception as e:
@@ -59,9 +57,7 @@ class ChunkingService:
     async def embed(
         self,
         chunks: List[Segment],
-        file: NormalizedFileData,
-        project_iid: str,
-        tenant_id: str,
+        file_id: str,
         idx: int
     ):
         texts, vectors, ids, metas = [], [], [], []
@@ -76,14 +72,8 @@ class ChunkingService:
             metadata = ChunkMetadata(
                 speakers=chunk.speakers or [],
                 word_count=len(chunk.text.split()),
-                file_id=file.file_id,
-                file_name=file.file_name,
-                file_type=file.file_type,
-                file_order=file.file_order,
-                language=file.normalized_file.language,
-                tenant_id=tenant_id,
-                project_iid=str(project_iid),
-                chunk_order=idx + i,
+                file_id=file_id,
+                chunk_order=idx + i+1,
                 created_at=datetime.now().isoformat(),
                 start=chunk.start,
                 end=chunk.end,

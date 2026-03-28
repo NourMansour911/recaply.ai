@@ -5,20 +5,20 @@ from .normalizers_exceptions import SubtitleParsingException, InvalidTimeFormatE
 from helpers.logger import get_logger
 import webvtt
 from pysrt import SubRipFile
-from schemas.normalized_schemas import Segment, NormalizedContent
+from models import Segment
 
 logger = get_logger(__name__)
 
 class SubtitleNormalizer(BaseNormalizer):
-    def __init__(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str, language: str):
+    def __init__(self, file_type: str, tenant_id: str, project_id: str, file_path: str, file_name: str):
         self.file_name = file_name
         self.file_path = file_path
         self.file_type = file_type
         self.tenant_id = tenant_id
         self.project_id = project_id
-        self.language = language
+        
 
-    async def normalize(self) -> NormalizedContent:
+    async def normalize(self) -> List[Segment]:
         try:
             if self.file_type == 'srt':
                 segments = self._parse_srt()
@@ -39,7 +39,7 @@ class SubtitleNormalizer(BaseNormalizer):
             ) for seg in segments]
 
             merged_segments = self.merge_small_segments(segment_objects)
-            return self._create_normalized_file_model(self.language, merged_segments)
+            return merged_segments
 
         except SubtitleParsingException:
             raise

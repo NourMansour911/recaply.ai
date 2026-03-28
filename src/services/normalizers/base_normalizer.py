@@ -1,20 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import List
-from schemas.normalized_schemas import NormalizedContent, Segment
+from models import  Segment
 from .normalizers_exceptions import NormalizerException
 
 class BaseNormalizer(ABC):
 
     @abstractmethod
-    async def normalize(self) -> NormalizedContent:
+    async def normalize(self) -> List[Segment]:
         pass
 
-    def _create_normalized_file_model(self, language: str, segments: List[Segment]) -> NormalizedContent:
-        return NormalizedContent(
-            language=language,
-            segments=segments,
-            duration=segments[-1].end if segments else 0.0
-        )
+
 
     def merge_small_segments(self, segments: List[Segment], target_words: int = 50, max_words: int = 80) -> List[Segment]:
         merged_segments = []

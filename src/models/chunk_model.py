@@ -4,12 +4,6 @@ from pydantic import BaseModel, Field
 
 class ChunkMetadata(BaseModel):
     file_id: str = Field(..., description="File identifier")
-    file_name: str = Field(..., description="Original file name")
-    file_type: str = Field(..., description="File type (audio, srt, vtt, txt, pdf)")
-    file_order: int = Field(..., description="Order of the file in the project")
-    language: str = Field(..., description="Language code")
-    tenant_id: str = Field(..., description="Tenant identifier")
-    project_iid: str = Field(..., description="Project identifier")
     chunk_order: int = Field(..., description="Order of the chunk in the document")
     created_at: str = Field(..., description="Creation timestamp")
     word_count: int = Field(..., description="Word count in chunk")

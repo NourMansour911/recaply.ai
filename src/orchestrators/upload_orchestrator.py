@@ -5,13 +5,13 @@ from services.files import FileDetectorService, FileStorageService, FileValidato
 from repos import ProjectRepo,FileRepo
 from models import FileModel,ProjectModel
 from services.normalizers import NormalizerFactory
-from schemas.normalized_schemas import NormalizedContent
 from services.chunking import ChunkingService
 from services.project_service import ProjectService
 from integrations.vector_db import VectorDBInterface
 from integrations.llm import LLMInterface
-from bson import ObjectId
-from schemas import UploadFilesSchema,NormalizedFileData
+from models.file_model import Segment
+from schemas import UploadFilesSchema
+from typing import List
 
 logger = get_logger(__name__)
 
@@ -49,7 +49,6 @@ class UploadOrchestrator:
         file: UploadFile,
         file_order: int,
         project: ProjectModel,
-        tenant_id: str,
 
     ):
         logger.info("Starting upload flow")
@@ -63,7 +62,7 @@ class UploadOrchestrator:
         
         file_path, original_name,unique_name = self.storage_service.generate_file_path(
             original_filename=file.filename,
-            tenant_id=tenant_id,
+            tenant_id=project.tenant_id,
             project_id=project.project_id,
             file_order=file_order
         )
@@ -71,13 +70,13 @@ class UploadOrchestrator:
         
         await self.storage_service.save_file(file, file_path)
         
-        file_size_mb = (file.size / self.settings.TO_BYTES).__round__(2)
+        file_size_mb = (file.size / self.settings.TO_BYTES).__ceil__()
 
         
-        normalizer = NormalizerFactory.create_normalizer(file_name=original_name,file_type=file_type, tenant_id=tenant_id, project_id=project.project_id, file_path=file_path)
+        normalizer = NormalizerFactory.create_normalizer(file_name=original_name,file_type=file_type, tenant_id=project.tenant_id, project_id=project.project_id, file_path=file_path)
         
-        normalized_file : NormalizedContent = await normalizer.normalize()
-        
+        normalized_segments : List[Segment] = await normalizer.normalize()
+        file_duration = normalized_segments[-1].end
         
         
         logger.info(
@@ -85,18 +84,22 @@ class UploadOrchestrator:
         )
         
         file_model = FileModel(
-            file_tenant_id=tenant_id,
+            file_tenant_id=project.tenant_id,
             file_project_iid=project.iid,
             file_name=original_name,
             file_type=file_type,
+            file_content=normalized_segments,
+            file_unique_name=unique_name,
             file_size_mb=file_size_mb,
             file_path=file_path,
-            file_order=file_order
+            file_order=file_order,
+            file_duration=file_duration,
+            file_project_id=project.project_id,
         )
         
         file_iid = await self.file_repo.add_file(file_model)
-
-
+        file_model.iid = file_iid
+        
         logger.info(
             "Upload flow completed",
             extra={
@@ -108,15 +111,7 @@ class UploadOrchestrator:
         
         
 
-        return NormalizedFileData(
-            file_id=str(file_iid),
-            file_name=original_name,
-            file_type=file_type,
-            file_size=file_size_mb,
-            file_path=file_path,
-            file_order=file_order,
-            normalized_file=normalized_file
-        )
+        return file_model
         
     
     async def execute_batch(
@@ -134,7 +129,7 @@ class UploadOrchestrator:
         
         
         
-        normalized_files = []
+        normalized_files : List[FileModel] = []
         total_chunks = 0
         total_files = 0
         project_vectors = []
@@ -143,16 +138,16 @@ class UploadOrchestrator:
         project_metadatas = []
         
         for i,file in enumerate(files):
-            file_data = await self._upload_normalize(file, tenant_id=tenant_id, project=project,file_order=i+1)
-            normalized_files.append(file_data)
-            texts, vectors, _ ,metadatas = await self.chunking_service.process_file_chunks(file_data=file_data, project_iid=str(project.iid),idx=total_chunks ,tenant_id=tenant_id)
+            file_model = await self._upload_normalize(file, project=project,file_order=i+1)
+            normalized_files.append(file_model)
+            texts, vectors, _ ,metadatas = await self.chunking_service.process_file_chunks(file_model=file_model,idx=total_chunks )
             project_texts.extend(texts)
             project_vectors.extend(vectors)
             project_metadatas.extend(metadatas)
             total_chunks += len(texts)
             total_files += 1
         
-        vectorDB_collection = self.vdb_client.create_collection_name(project_id=project.project_id,tenant_id=tenant_id)
+        vectorDB_collection = self.vdb_client.create_collection_name(project_id=project_id,tenant_id=tenant_id)
         project_record_ids = list(range(total_chunks))
         logger.info(f"{len(project_texts)},{len(project_vectors)},{len(project_record_ids)},{len(project_metadatas)}")
         chunks_stored = await self.vdb_client.store_batch(collection_name=vectorDB_collection,batch_size=250,texts=project_texts, vectors=project_vectors,record_ids=project_record_ids,metadatas=project_metadatas)
@@ -162,7 +157,9 @@ class UploadOrchestrator:
             return UploadFilesSchema(total_files=total_files,
                                     vectorDB_collection=vectorDB_collection,
                                     project_iid=str(project.iid),
-                                    total_chunks=total_chunks)
+                                    total_chunks=total_chunks,
+                                    files=normalized_files
+                                    )
 
         
         
