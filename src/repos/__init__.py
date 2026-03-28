@@ -7,6 +7,7 @@ from .project_repo import ProjectRepo
 from . import repo_exceptions
 from .repo_exceptions import DatabaseConnectionException
 from .repo_exceptions import FetchFileException
+from .repo_exceptions import FileRepoException
 from .repo_exceptions import InsertFileException
 from .repo_exceptions import ProjectCreationException
 from .repo_exceptions import ProjectDeletionException
@@ -26,6 +27,7 @@ __all__ = [
     "DatabaseConnectionException",
     "FetchFileException",
     "FileRepo",
+    "FileRepoException",
     "InsertFileException",
     "ProjectCreationException",
     "ProjectDeletionException",

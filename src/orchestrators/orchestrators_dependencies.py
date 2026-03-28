@@ -2,9 +2,10 @@ from orchestrators.upload_orchestrator import UploadOrchestrator
 from repos.repos_dependencies import get_project_repo,get_file_repo
 from repos.project_repo import ProjectRepo
 from repos.file_repo import FileRepo
-from services.services_dependencies import get_storage_service, get_file_detector, get_file_validator,get_chunking_service
+from services.services_dependencies import get_project_service,get_storage_service, get_file_detector, get_file_validator,get_chunking_service
 from core.settings import Settings, get_settings
 from services.files import FileDetectorService, FileStorageService, FileValidatorService
+from services.project_service import ProjectService
 from fastapi import Depends
 from integrations import get_vdb_client, get_embedding_client 
 from integrations.vector_db import VectorDBFactory
@@ -23,6 +24,7 @@ def get_upload_orchestrator(
     vdb_client: VectorDBFactory = Depends(get_vdb_client),
     embedding_client: LLMFactory = Depends(get_embedding_client),
     chunking_service: ChunkingService = Depends(get_chunking_service),
+    project_service: ProjectService = Depends(get_project_service),
 ) -> UploadOrchestrator:
 
     return UploadOrchestrator(
@@ -34,5 +36,6 @@ def get_upload_orchestrator(
         file_repo=file_repo,
         vdb_client=vdb_client,
         embedding_client=embedding_client,
-        chunking_service=chunking_service
+        chunking_service=chunking_service,
+        project_service=project_service
     )

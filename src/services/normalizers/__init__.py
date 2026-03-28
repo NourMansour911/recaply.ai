@@ -8,11 +8,8 @@ from . import factory
 from .factory import NormalizerFactory
 from . import normalizers_exceptions
 from .normalizers_exceptions import AudioProcessingException
-from .normalizers_exceptions import BaseNormalizeException
-from .normalizers_exceptions import FFmpegException
 from .normalizers_exceptions import InvalidTimeFormatException
-from .normalizers_exceptions import NormalizationException
-from .normalizers_exceptions import SegmentProcessingException
+from .normalizers_exceptions import NormalizerException
 from .normalizers_exceptions import SubtitleParsingException
 from .normalizers_exceptions import TextExtractionException
 from .normalizers_exceptions import TranscriptionException
@@ -30,13 +27,10 @@ __all__ = [
     "text_normalizer",
     "AudioNormalizer",
     "AudioProcessingException",
-    "BaseNormalizeException",
     "BaseNormalizer",
-    "FFmpegException",
     "InvalidTimeFormatException",
-    "NormalizationException",
+    "NormalizerException",
     "NormalizerFactory",
-    "SegmentProcessingException",
     "SubtitleNormalizer",
     "SubtitleParsingException",
     "TextExtractionException",

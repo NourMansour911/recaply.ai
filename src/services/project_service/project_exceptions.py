@@ -1,4 +1,4 @@
-from .project_exceptions import ServiceException
+from ..service_exceptions import ServiceException
 
 
 class ProjectServiceException(ServiceException):
@@ -7,9 +7,10 @@ class ProjectServiceException(ServiceException):
 
 
 class ProjectNotFoundError(ProjectServiceException):
-    def __init__(self, project_id: str, details=None):
+    def __init__(self, project_id: str, tenant_id: str,details=None):
         message = f"Project not found: {project_id}"
-        context = {"project_id": project_id}
+        context = {"project_id": project_id,
+                  "tenant_id": tenant_id}
         if details:
             context.update(details)
         super().__init__(message=message, details=context)

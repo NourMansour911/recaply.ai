@@ -2,10 +2,10 @@ from core.app_exceptions import AppException
 
 
 class ServiceException(AppException):
-    def __init__(self, message="Service layer error", details=None):
+    def __init__(self, message="Service layer error", details=None,status_code=500):
         super().__init__(
             message=message,
-            status_code=500,
+            status_code=status_code,
             error_code="SERVICE_ERROR",
             details=details
         )
@@ -18,7 +18,7 @@ class ValidationError(ServiceException):
 
 class NotFoundError(ServiceException):
     def __init__(self, message="Resource not found", details=None):
-        super().__init__(message=message, details=details)
+        super().__init__(message=message, details=details,status_code=404)
 
 
 class ProcessingError(ServiceException):

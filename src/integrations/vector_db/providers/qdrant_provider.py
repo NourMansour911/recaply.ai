@@ -5,12 +5,12 @@ from typing import List, Optional, Dict, Any
 from helpers.logger import get_logger
 from models.chunk_model import ChunkMetadata
 from ..exceptions import (
-    ConnectionError,
-    CollectionNotFoundError,
-    InsertError,
-    BatchInsertError,
-    FetchError,
-    SearchError
+    VectorDBConnectionError,
+    VectorDBCollectionNotFoundError,
+    VectorDBInsertError,
+    VectorDBBatchInsertError,
+    VectorDBFetchError,
+    VectorDBSearchError
 )
 
 logger = get_logger(__name__)
@@ -31,7 +31,7 @@ class QdrantDBProvider(VectorDBInterface):
             self.client = QdrantClient(path=self.db_path)
         except Exception as e:
             logger.error(f"Failed to connect to Qdrant: {e}")
-            raise ConnectionError(f"Failed to connect to Qdrant: {e}") from e
+            raise VectorDBConnectionError(f"Failed to connect to Qdrant: {e}") from e
 
     def disconnect(self):
         self.client = None
@@ -48,18 +48,18 @@ class QdrantDBProvider(VectorDBInterface):
     def get_collection_info(self, collection_name: str) -> dict:
         try:
             if not self.is_collection_existed(collection_name):
-                raise CollectionNotFoundError(f"Collection {collection_name} does not exist")
+                raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
             return self.client.get_collection(collection_name=collection_name)
-        except CollectionNotFoundError:
+        except VectorDBCollectionNotFoundError:
             raise
         except Exception as e:
             logger.error(f"Failed to fetch collection info: {e}")
-            raise FetchError(f"Failed to fetch collection info: {e}") from e
+            raise VectorDBFetchError(f"Failed to fetch collection info: {e}") from e
 
     def delete_collection(self, collection_name: str):
         if self.is_collection_existed(collection_name):
             return self.client.delete_collection(collection_name=collection_name)
-        raise CollectionNotFoundError(f"Collection {collection_name} does not exist")
+        raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
 
     def create_collection(self, collection_name: str, embedding_size: int, do_reset: bool = False):
         if do_reset and self.is_collection_existed(collection_name):
@@ -87,7 +87,7 @@ class QdrantDBProvider(VectorDBInterface):
             return True
         except Exception as e:
             logger.error(f"Failed to ensure collection exists: {e}")
-            raise CollectionNotFoundError(f"Failed to ensure collection exists: {e}") from e
+            raise VectorDBCollectionNotFoundError(f"Failed to ensure collection exists: {e}") from e
 
     async def store_batch(
         self,
@@ -102,7 +102,7 @@ class QdrantDBProvider(VectorDBInterface):
             logger.warning("Skipping empty batch")
             return False
         if not (len(texts) == len(vectors) == len(metadatas) == len(record_ids)):
-            raise BatchInsertError("Batch size mismatch")
+            raise VectorDBBatchInsertError("Batch size mismatch")
 
         await self._ensure_collection_exists(collection_name)
 
@@ -116,7 +116,7 @@ class QdrantDBProvider(VectorDBInterface):
         )
 
         if not success:
-            raise BatchInsertError(f"Failed to insert batch into {collection_name}")
+            raise VectorDBBatchInsertError(f"Failed to insert batch into {collection_name}")
         logger.info(f"Stored batch of {len(texts)} chunks in {collection_name}")
         return True
 
@@ -132,7 +132,7 @@ class QdrantDBProvider(VectorDBInterface):
         if metadata is None:
             metadata = [None] * len(texts)
         if not self.is_collection_existed(collection_name):
-            raise CollectionNotFoundError(f"Collection {collection_name} does not exist")
+            raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
 
         for i in range(0, len(texts), batch_size):
             batch_points = [
@@ -147,13 +147,13 @@ class QdrantDBProvider(VectorDBInterface):
                 self.client.upsert(collection_name=collection_name, points=batch_points)
             except Exception as e:
                 logger.error(f"Batch insert failed: {e}")
-                raise BatchInsertError(f"Batch insert failed: {e}") from e
+                raise VectorDBBatchInsertError(f"Batch insert failed: {e}") from e
         return True
 
     def insert_one(self, collection_name: str, text: str, vector: list,
                    metadata: dict = None, record_id: str = None):
         if not self.is_collection_existed(collection_name):
-            raise CollectionNotFoundError(f"Collection {collection_name} does not exist")
+            raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
         try:
             self.client.upsert(
                 collection_name=collection_name,
@@ -162,7 +162,7 @@ class QdrantDBProvider(VectorDBInterface):
             return True
         except Exception as e:
             logger.error(f"Single insert failed: {e}")
-            raise InsertError(f"Single insert failed: {e}") from e
+            raise VectorDBInsertError(f"Single insert failed: {e}") from e
 
     def get_collection_chunks(
         self,
@@ -172,9 +172,9 @@ class QdrantDBProvider(VectorDBInterface):
         text_limit: Optional[int] = 100
     ) -> Dict[str, Any]:
         if page < 1:
-            raise ValueError("Page number must be >= 1")
+            page = 1
         if not self.is_collection_existed(collection_name):
-            raise CollectionNotFoundError(f"Collection {collection_name} does not exist")
+            raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
 
         try:
             collection_info = self.client.get_collection(collection_name=collection_name)
@@ -200,7 +200,7 @@ class QdrantDBProvider(VectorDBInterface):
                     "total_pages": total_pages, "returned_chunks": len(chunks), "chunks": chunks}
         except Exception as e:
             logger.error(f"Failed fetching chunks: {e}")
-            raise FetchError(f"Failed fetching chunks: {e}") from e
+            raise VectorDBFetchError(f"Failed fetching chunks: {e}") from e
 
     def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
         try:
@@ -213,7 +213,7 @@ class QdrantDBProvider(VectorDBInterface):
             return results.points
         except Exception as e:
             logger.error(f"Vector search failed: {e}")
-            raise SearchError(f"Vector search failed: {e}") from e
+            raise VectorDBSearchError(f"Vector search failed: {e}") from e
 
     async def hybrid_search(self, collection_name: str,
                             query_vector: List[float],
@@ -241,7 +241,7 @@ class QdrantDBProvider(VectorDBInterface):
             return results.points
         except Exception as e:
             logger.error(f"Hybrid search failed: {e}")
-            raise SearchError(f"Hybrid search failed: {e}") from e
+            raise VectorDBSearchError(f"Hybrid search failed: {e}") from e
 
     async def keyword_search(self, collection_name: str,
                              query_text: str,
@@ -266,4 +266,4 @@ class QdrantDBProvider(VectorDBInterface):
             return results.points
         except Exception as e:
             logger.error(f"Keyword search failed: {e}")
-            raise SearchError(f"Keyword search failed: {e}") from e
+            raise VectorDBSearchError(f"Keyword search failed: {e}") from e

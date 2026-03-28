@@ -27,7 +27,7 @@ class ProjectService:
     async def delete_project(self, project_id: str, tenant_id: str) -> DeleteProjectResponse:
         project = await self.project_repo.get_project(project_id, tenant_id)
         if not project:
-            raise ProjectNotFoundError(project_id)
+            raise ProjectNotFoundError(project_id,tenant_id)
 
         project_iid = project.iid
 
@@ -80,6 +80,7 @@ class ProjectService:
                 raise ProjectServiceException(details=details)
 
             for project in projects:
+                deleted_count += 1
                 collection_name = self.vdb_client.create_collection_name(project_id=project.project_id, tenant_id=tenant_id)
                 try:
                     await self._delete_collection_strict(collection_name)
@@ -87,7 +88,7 @@ class ProjectService:
                     raise
 
             try:
-                deleted_count = await self.project_repo.delete_projects_by_tenant(tenant_id)
+                _ = await self.project_repo.delete_projects_by_tenant(tenant_id)
             except Exception as e:
                 details = {"tenant_id": tenant_id, "error": str(e)}
                 raise ProjectServiceException(details=details)

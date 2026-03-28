@@ -7,6 +7,7 @@ from models import FileModel,ProjectModel
 from services.normalizers import NormalizerFactory
 from schemas.normalized_schemas import NormalizedContent
 from services.chunking import ChunkingService
+from services.project_service import ProjectService
 from integrations.vector_db import VectorDBInterface
 from integrations.llm import LLMInterface
 from bson import ObjectId
@@ -28,6 +29,7 @@ class UploadOrchestrator:
         vdb_client: VectorDBInterface, 
         embedding_client: LLMInterface ,
         chunking_service: ChunkingService,
+        project_service: ProjectService
         
     ):
         self.storage_service = storage_service
@@ -39,7 +41,7 @@ class UploadOrchestrator:
         self.vdb_client = vdb_client
         self.embedding_client = embedding_client
         self.chunking_service = chunking_service
-
+        self.project_service = project_service
 
 
     async def _upload_normalize(
@@ -123,8 +125,11 @@ class UploadOrchestrator:
         tenant_id: str,
         project_id: str,
     ):
-        project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id) 
         
+        if await self.project_repo.project_exists(project_id=project_id,tenant_id=tenant_id):
+           await self.project_service.delete_project(project_id=project_id,tenant_id=tenant_id)
+        
+        project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id) 
         logger.info("Starting batch upload flow", extra={"files_count": len(files)})
         
         

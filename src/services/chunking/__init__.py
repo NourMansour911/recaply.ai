@@ -1,5 +1,9 @@
 # Auto-generated __init__.py
 
+from . import chunking_exceptions
+from .chunking_exceptions import ChunkProcessingError
+from .chunking_exceptions import ChunkingServiceException
+from .chunking_exceptions import EmbeddingError
 from . import chunking_service
 from .chunking_service import ChunkingService
 from . import merge_chunking
@@ -8,10 +12,14 @@ from . import semantic_chunking
 from .semantic_chunking import SemanticChunkingService
 
 __all__ = [
+    "chunking_exceptions",
     "chunking_service",
     "merge_chunking",
     "semantic_chunking",
+    "ChunkProcessingError",
     "ChunkingService",
+    "ChunkingServiceException",
+    "EmbeddingError",
     "MergeChunkingService",
     "SemanticChunkingService",
 ]
