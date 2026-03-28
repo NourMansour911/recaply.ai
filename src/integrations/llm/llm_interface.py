@@ -19,6 +19,4 @@ class LLMInterface(ABC):
     async def embed_text(self, text: str, document_type: str = None):
         pass
 
-    @abstractmethod
-    def construct_prompt(self, prompt: str, role: str):
-        pass
+

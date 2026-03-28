@@ -2,12 +2,16 @@
 
 from . import HFProvider
 from .HFProvider import HuggingFaceProvider
-from . import OpenAIProvider
-from .OpenAIProvider import OpenAIProvider
+from . import openai
+from . import openai_provider
+from .openai_provider import OpenAIProvider
+from .openai_provider import retry
 
 __all__ = [
     "HFProvider",
-    "OpenAIProvider",
+    "openai",
+    "openai_provider",
     "HuggingFaceProvider",
     "OpenAIProvider",
+    "retry",
 ]

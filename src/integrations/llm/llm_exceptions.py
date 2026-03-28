@@ -1,139 +1,96 @@
-from typing import Optional, Dict, Any
-from core import AppException
+from core.app_exceptions import AppException
 
 
-class BaseLLMException(AppException):
-
-
+class LLMException(AppException):
     def __init__(
         self,
-        message: str,
-        error_code: str,
-        model_id: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        message: str = "LLM layer error",
         status_code: int = 500,
+        error_code: str = "LLM_ERROR",
+        details: dict = None,
     ):
-        base_details = details or {}
-
-        if model_id:
-            base_details["model_id"] = model_id
-
         super().__init__(
             message=message,
             status_code=status_code,
             error_code=error_code,
-            details=base_details if base_details else None,
+            details=details,
         )
 
 
-class LLMInitializationException(BaseLLMException):
-    def __init__(
-        self,
-        model_id: Optional[str] = None,
-        provider: Optional[str] = None,
-        init_error: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
+
+class LLMInitializationException(LLMException):
+    def __init__(self, provider: str, init_error: str):
         super().__init__(
-            message="LLM provider initialization failed",
-            error_code="LLM_INITIALIZATION_FAILED",
-            model_id=model_id,
-            details={"provider": provider, "init_error": init_error, **(details or {})},
+            message=f"{provider} initialization failed",
+            error_code="LLM_INIT_ERROR",
+            details={"provider": provider, "error": init_error},
         )
 
 
-class LLMGenerationException(BaseLLMException):
-    def __init__(
-        self,
-        model_id: Optional[str] = None,
-        prompt: Optional[str] = None,
-        generation_error: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
+# Model Errors
+class LLMModelNotSetException(LLMException):
+    def __init__(self, operation: str, model_type: str, provider: str):
         super().__init__(
-            message="Text generation failed",
-            error_code="LLM_GENERATION_FAILED",
-            model_id=model_id,
-            details={"prompt": prompt[:100] + "..." if prompt and len(prompt) > 100 else prompt, 
-                    "generation_error": generation_error, **(details or {})},
-        )
-
-
-class LLMEmbeddingException(BaseLLMException):
-    def __init__(
-        self,
-        model_id: Optional[str] = None,
-        text_sample: Optional[str] = None,
-        embedding_error: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
-        super().__init__(
-            message="Text embedding failed",
-            error_code="LLM_EMBEDDING_FAILED",
-            model_id=model_id,
-            details={"text_sample": text_sample[:50] + "..." if text_sample and len(text_sample) > 50 else text_sample,
-                    "embedding_error": embedding_error, **(details or {})},
-        )
-
-
-class LLMModelNotSetException(BaseLLMException):
-    def __init__(
-        self,
-        operation: str,
-        model_type: str,
-        provider: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
-        super().__init__(
-            message=f"Model not set for {operation}",
+            message=f"{model_type} model not set for {operation}",
             error_code="LLM_MODEL_NOT_SET",
-            details={"operation": operation, "model_type": model_type, "provider": provider, **(details or {})},
+            details={
+                "operation": operation,
+                "model_type": model_type,
+                "provider": provider,
+            },
         )
 
 
-class LLMAPINotAvailableException(BaseLLMException):
-    def __init__(
-        self,
-        provider: str,
-        api_endpoint: Optional[str] = None,
-        network_error: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
+# API / Provider Errors
+class LLMAPINotAvailableException(LLMException):
+    def __init__(self, provider: str, api_endpoint: str, network_error: str):
         super().__init__(
-            message="LLM API not available",
-            error_code="LLM_API_NOT_AVAILABLE",
-            details={"provider": provider, "api_endpoint": api_endpoint, "network_error": network_error, **(details or {})},
-            status_code=503,
+            message=f"{provider} API not available",
+            error_code="LLM_API_DOWN",
+            details={
+                "provider": provider,
+                "endpoint": api_endpoint,
+                "error": network_error,
+            },
         )
 
 
-class LLMRateLimitException(BaseLLMException):
-    def __init__(
-        self,
-        model_id: Optional[str] = None,
-        retry_after: Optional[int] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
+class LLMRateLimitException(LLMException):
+    def __init__(self, model_id: str, retry_after: int = None):
         super().__init__(
-            message="LLM rate limit exceeded",
-            error_code="LLM_RATE_LIMIT_EXCEEDED",
-            model_id=model_id,
-            details={"retry_after": retry_after, **(details or {})},
+            message="Rate limit exceeded",
+            error_code="LLM_RATE_LIMIT",
             status_code=429,
+            details={
+                "model_id": model_id,
+                "retry_after": retry_after,
+            },
         )
 
 
-class LLMInvalidResponseException(BaseLLMException):
-    def __init__(
-        self,
-        model_id: Optional[str] = None,
-        response_data: Optional[str] = None,
-        validation_error: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
+# Response Errors
+class LLMInvalidResponseException(LLMException):
+    def __init__(self, model_id: str, response_data: str, validation_error: str):
         super().__init__(
-            message="Invalid LLM response received",
+            message="Invalid response from LLM",
             error_code="LLM_INVALID_RESPONSE",
-            model_id=model_id,
-            details={"response_data": response_data, "validation_error": validation_error, **(details or {})},
+            details={
+                "model_id": model_id,
+                "error": validation_error,
+                "response": response_data,
+            },
+        )
+
+
+# Embedding Errors
+class LLMEmbeddingException(LLMException):
+    def __init__(self, model_id: str, text_sample: str, embedding_error: str):
+        super().__init__(
+            message="Embedding generation failed",
+            error_code="LLM_EMBEDDING_ERROR",
+            details={
+                "model_id": model_id,
+                "text_sample": text_sample,
+                "error": embedding_error,
+            },
         )

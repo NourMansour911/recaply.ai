@@ -1,13 +1,14 @@
 # Auto-generated __init__.py
 
+from . import langchain_wrapper
+from .langchain_wrapper import ChatOpenAICompatible
 from . import llm_enums
 from .llm_enums import DocumentTypeEnum
 from .llm_enums import OpenAIEnums
 from . import llm_exceptions
-from .llm_exceptions import BaseLLMException
 from .llm_exceptions import LLMAPINotAvailableException
 from .llm_exceptions import LLMEmbeddingException
-from .llm_exceptions import LLMGenerationException
+from .llm_exceptions import LLMException
 from .llm_exceptions import LLMInitializationException
 from .llm_exceptions import LLMInvalidResponseException
 from .llm_exceptions import LLMModelNotSetException
@@ -19,17 +20,18 @@ from .llm_interface import LLMInterface
 from . import providers
 
 __all__ = [
+    "langchain_wrapper",
     "llm_enums",
     "llm_exceptions",
     "llm_factory",
     "llm_interface",
     "providers",
-    "BaseLLMException",
+    "ChatOpenAICompatible",
     "DocumentTypeEnum",
     "LLMAPINotAvailableException",
     "LLMEmbeddingException",
+    "LLMException",
     "LLMFactory",
-    "LLMGenerationException",
     "LLMInitializationException",
     "LLMInterface",
     "LLMInvalidResponseException",
