@@ -8,10 +8,7 @@ from .utils import format_segments
 
 logger = logging.getLogger(__name__)
 
-
-
 context_parser = PydanticOutputParser(pydantic_object=MeetingContextModel)
-
 
 CONTEXT_PROMPT = ChatPromptTemplate.from_messages([
     (
@@ -22,7 +19,6 @@ You are an AI assistant that extracts structured meeting context.
 Rules:
 - Use ONLY provided segments
 - Do NOT hallucinate
-- Do NOT generate timestamps or metadata
 - Output MUST be valid JSON
 
 {format_instructions}
@@ -43,26 +39,13 @@ Extract:
     )
 ])
 
-
-
-
-
-def build_context_chain(llm:LCOpenAI):
-
-
+def build_context_chain(llm: LCOpenAI):
     def prepare_input(inputs: dict):
         segments = inputs["segments"]
-
         return {
             "segments": format_segments(segments),
             "format_instructions": context_parser.get_format_instructions()
         }
 
-    chain = (
-        RunnableLambda(prepare_input)
-        | CONTEXT_PROMPT
-        | llm
-        | context_parser
-    )
-
+    chain = RunnableLambda(prepare_input) | CONTEXT_PROMPT | llm | context_parser
     return chain

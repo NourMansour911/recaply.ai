@@ -10,7 +10,13 @@ from integrations import get_whisper_provider
 from integrations.vector_db import VectorDBFactory
 from integrations.llm import LLMFactory,LCOpenAI
 from services.chains import ChainsService
+import langsmith
+import os
 settings = get_settings()
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = settings.LANGSMITH_API_KEY
+os.environ["LANGCHAIN_PROJECT"] = settings.APP_NAME
+
 logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
