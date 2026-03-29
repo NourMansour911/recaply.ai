@@ -18,6 +18,7 @@ from .output_models import Task
 from .output_models import TaskType
 from . import utils
 from .utils import format_segments
+from .utils import get_config
 
 __all__ = [
     "chains_service",
@@ -38,4 +39,5 @@ __all__ = [
     "TaskType",
     "build_context_chain",
     "format_segments",
+    "get_config",
 ]

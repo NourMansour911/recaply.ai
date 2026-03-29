@@ -5,6 +5,7 @@ from .app_exceptions import AppException
 from . import handler
 from .handler import app_exception_handler
 from . import main_dependencies
+from .main_dependencies import get_chains
 from .main_dependencies import get_db_client
 from .main_dependencies import get_project_id
 from .main_dependencies import get_tenant_id
@@ -20,6 +21,7 @@ __all__ = [
     "AppException",
     "Settings",
     "app_exception_handler",
+    "get_chains",
     "get_db_client",
     "get_project_id",
     "get_settings",

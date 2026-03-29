@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List
 from models import FileModel
 
-class UploadFilesSchema(BaseModel):
+class UploadFilesResponse(BaseModel):
     project_iid: str
     vectorDB_collection: str 
     total_files: int

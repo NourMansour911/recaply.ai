@@ -10,7 +10,7 @@ from services.project_service import ProjectService
 from integrations.vector_db import VectorDBInterface
 from integrations.llm import LLMInterface
 from models.file_model import Segment
-from schemas import UploadFilesSchema
+from schemas import UploadFilesResponse
 from typing import List
 
 logger = get_logger(__name__)
@@ -154,7 +154,7 @@ class UploadOrchestrator:
         
         if chunks_stored:
             logger.info("Chunks stored successfully")
-            return UploadFilesSchema(total_files=total_files,
+            return UploadFilesResponse(total_files=total_files,
                                     vectorDB_collection=vectorDB_collection,
                                     project_iid=str(project.iid),
                                     total_chunks=total_chunks,
