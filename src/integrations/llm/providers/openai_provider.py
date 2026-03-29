@@ -97,11 +97,11 @@ class OpenAIProvider(LLMInterface):
     def __init__(
         self,
         api_key: str,
+        timeout: int,
+        max_retries: int ,
+        default_temperature: float,
+        default_max_tokens: int ,
         api_url: Optional[str] = None,
-        timeout: int = 30,
-        max_retries: int = 3,
-        default_temperature: float = 0.7,
-        default_max_tokens: int = 500,
     ):
         self.api_key = api_key
         self.api_url = api_url

@@ -1,23 +1,32 @@
 from .providers import OpenAIProvider,  HuggingFaceProvider
 from helpers import get_logger
-from core import Settings
-
-
+from typing import Optional
+from .langchain_wrapper import ChatOpenAICompatible
 logger = get_logger(__name__)
 class LLMFactory:
-    def __init__(self,settings: Settings):
-        self.settings = settings
-
-
-    def create(self, provider: str):
+    
+    def create(self,api_key: str ,provider: str = "OPENAI",api_url: Optional[str] = None,
+        timeout: int = 30,
+        max_retries: int = 3,
+        default_temperature: float = 0.7,
+        default_max_tokens: int = 500
+        ) :
+        
         if provider == "OPENAI":
             return OpenAIProvider(
-                api_key = self.settings.OPENAI_API_KEY,
-                api_url = self.settings.OPENAI_API_URL,
-
-            )
+                api_key = api_key,
+                api_url = api_url,
+                default_max_tokens=default_max_tokens,
+                default_temperature=default_temperature,
+                max_retries=max_retries,
+                timeout=timeout)
             
         if provider == "HF":
             return HuggingFaceProvider()
 
         return None
+    
+    def get_langchain_llm(self,model: str,provider: OpenAIProvider):
+        
+        if provider == "OPENAI":
+            return ChatOpenAICompatible(provider=provider, model=model)

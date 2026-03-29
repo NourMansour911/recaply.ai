@@ -22,15 +22,20 @@ async def lifespan(app: FastAPI):
   # MongoDB client
   app.state.connection = AsyncIOMotorClient(settings.MONGODB_URL)
   app.state.db_client = app.state.connection[settings.MONGODB_DATABASE]
-
-  llm_provider_factory = LLMFactory(settings)
+  
+  # LLM clients
+  llm_provider_factory = LLMFactory()
   app.state.embedding_client = llm_provider_factory.create(provider=settings.EMBEDDING_BACKEND)
   app.state.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID, embedding_size=settings.EMBEDDING_MODEL_SIZE)
   
   
-  app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND)
+  app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND,api_key=settings.OPENAI_API_KEY,api_url=settings.OPENAI_API_URL)
   app.state.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
   
+  # LangChain clients
+  app.state.langchain_client = llm_provider_factory.get_langchain_llm(model=settings.GENERATION_MODEL_ID,provider=app.state.generation_client)
+  logger.info("LangChain client loaded successfully")
+
   vdb_provider_factory = VectorDBFactory(settings)
   app.state.vdb_client = vdb_provider_factory.create(provider=settings.VECTOR_DB_BACKEND)
   app.state.vdb_client.connect()

@@ -10,3 +10,6 @@ def get_generation_client(request: Request) -> LLMFactory:
 
 def get_embedding_client(request: Request) -> LLMFactory:
     return request.app.state.embedding_client
+
+def get_langchain_client(request: Request) -> LLMFactory:
+    return request.app.state.langchain_client

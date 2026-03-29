@@ -15,9 +15,8 @@ from .providers.openai_provider import OpenAIProvider
 
 
 class ChatOpenAICompatible(BaseChatModel):
-    model: Optional[str] = None
 
-    def __init__(self, provider: OpenAIProvider, model: Optional[str] = None, **kwargs):
+    def __init__(self, provider: OpenAIProvider, model: str , **kwargs):
         super().__init__(**kwargs)
         self.provider = provider
         self.model = model

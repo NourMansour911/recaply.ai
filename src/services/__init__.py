@@ -1,5 +1,6 @@
 # Auto-generated __init__.py
 
+from . import chains
 from . import chunking
 from . import files
 from . import normalizers
@@ -20,6 +21,7 @@ from .services_dependencies import get_vdb_service
 from . import vdb_service
 
 __all__ = [
+    "chains",
     "chunking",
     "files",
     "normalizers",

@@ -13,14 +13,8 @@ logger = get_logger(__name__)
 class HuggingFaceProvider(LLMInterface):
     def __init__(
         self,
-        default_input_max_chars=2048,
-        default_out_max_tokens=500,
-        default_temperature=0.7,
-    ):
-        self.default_input_max_chars = default_input_max_chars
-        self.default_out_max_tokens = default_out_max_tokens
-        self.default_temperature = default_temperature
 
+    ):
         self.embedding_model_id = None
         self.embedding_size = None
         self.client = None
