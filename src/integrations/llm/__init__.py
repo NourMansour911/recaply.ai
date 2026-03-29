@@ -1,7 +1,7 @@
 # Auto-generated __init__.py
 
 from . import langchain_wrapper
-from .langchain_wrapper import ChatOpenAICompatible
+from .langchain_wrapper import LCOpenAI
 from . import llm_enums
 from .llm_enums import DocumentTypeEnum
 from .llm_enums import OpenAIEnums
@@ -26,8 +26,8 @@ __all__ = [
     "llm_factory",
     "llm_interface",
     "providers",
-    "ChatOpenAICompatible",
     "DocumentTypeEnum",
+    "LCOpenAI",
     "LLMAPINotAvailableException",
     "LLMEmbeddingException",
     "LLMException",

@@ -19,3 +19,5 @@ def get_project_id(x_project_id: str = Header(...)) -> str:
 def get_db_client(request: Request):
     return request.app.state.db_client
 
+def get_chains(request: Request):
+    return request.app.state.chains

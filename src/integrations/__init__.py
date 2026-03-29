@@ -3,6 +3,7 @@
 from . import integrations_dependencies
 from .integrations_dependencies import get_embedding_client
 from .integrations_dependencies import get_generation_client
+from .integrations_dependencies import get_langchain_client
 from .integrations_dependencies import get_vdb_client
 from . import llm
 from . import vector_db
@@ -18,6 +19,7 @@ __all__ = [
     "WhisperProvider",
     "get_embedding_client",
     "get_generation_client",
+    "get_langchain_client",
     "get_vdb_client",
     "get_whisper_provider",
 ]

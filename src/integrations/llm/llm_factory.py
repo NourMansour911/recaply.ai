@@ -1,9 +1,10 @@
 from .providers import OpenAIProvider,  HuggingFaceProvider
+
 from helpers import get_logger
 from typing import Optional
-from .langchain_wrapper import ChatOpenAICompatible
 logger = get_logger(__name__)
 class LLMFactory:
+
     
     def create(self,api_key: str ,provider: str = "OPENAI",api_url: Optional[str] = None,
         timeout: int = 30,
@@ -25,8 +26,4 @@ class LLMFactory:
             return HuggingFaceProvider()
 
         return None
-    
-    def get_langchain_llm(self,model: str,provider: OpenAIProvider):
-        
-        if provider == "OPENAI":
-            return ChatOpenAICompatible(provider=provider, model=model)
+

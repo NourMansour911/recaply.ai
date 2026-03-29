@@ -8,8 +8,8 @@ from routers import files_router,projects_router,vectordb_router,workspace_route
 from helpers.logger import get_logger
 from integrations import get_whisper_provider
 from integrations.vector_db import VectorDBFactory
-from integrations.llm import LLMFactory
-
+from integrations.llm import LLMFactory,LCOpenAI
+from services.chains import ChainsService
 settings = get_settings()
 logger = get_logger(__name__)
 @asynccontextmanager
@@ -32,8 +32,10 @@ async def lifespan(app: FastAPI):
   app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND,api_key=settings.OPENAI_API_KEY,api_url=settings.OPENAI_API_URL)
   app.state.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
   
-  # LangChain clients
-  app.state.langchain_client = llm_provider_factory.get_langchain_llm(model=settings.GENERATION_MODEL_ID,provider=app.state.generation_client)
+  # LangChain
+  app.state.langchain_client = LCOpenAI(api_key=settings.OPENAI_API_KEY,api_url=settings.OPENAI_API_URL)
+  app.state.chains = ChainsService(app.state.langchain_client,settings=settings)
+  
   logger.info("LangChain client loaded successfully")
 
   vdb_provider_factory = VectorDBFactory(settings)

@@ -2,7 +2,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnableLambda
-
+from integrations.llm import LCOpenAI
 from .output_models import MeetingContextModel
 from .utils import format_segments
 
@@ -47,7 +47,7 @@ Extract:
 
 
 
-def build_context_chain(llm):
+def build_context_chain(llm:LCOpenAI):
 
 
     def prepare_input(inputs: dict):
