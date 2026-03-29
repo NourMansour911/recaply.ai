@@ -2,8 +2,9 @@ from pydantic import BaseModel, Field
 from typing import Optional,List
 from bson.objectid import ObjectId
 from datetime import datetime
-
+import uuid
 class Segment(BaseModel):
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), description="Segment ID")
     text: str = Field(..., description="Content of the segment")
     start: Optional[float] = Field(None,  description="Start time in seconds", )
     end: Optional[float] = Field(None,  description="End time in seconds", )
