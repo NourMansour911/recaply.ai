@@ -3,7 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnableLambda
 from integrations.llm import LCOpenAI
-from .output_models import Risk
+from schemas.chains_output_schemas import Risk
 from .utils import format_segments
 
 logger = logging.getLogger(__name__)

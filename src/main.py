@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
   
   # LLM clients
   llm_provider_factory = LLMFactory()
-  app.state.embedding_client = llm_provider_factory.create(provider=settings.EMBEDDING_BACKEND)
+  app.state.embedding_client = llm_provider_factory.create(api_key="ss",provider=settings.EMBEDDING_BACKEND)
   app.state.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID, embedding_size=settings.EMBEDDING_MODEL_SIZE)
   
   

@@ -1,10 +1,9 @@
 from typing import List, Dict
-from core import Settings
 from helpers.logger import get_logger
 from schemas import EnrichedSegment, ChainsResponse
 from repos import FileRepo, ProjectRepo
 from models import Segment, FileModel
-from services.chains.output_models import GenerateOutput
+from schemas.chains_output_schemas import GenerateOutput
 from services.chains import ChainsService
 
 logger = get_logger(__name__)
@@ -14,12 +13,10 @@ class ChainsOrchestrator:
 
     def __init__(
         self,
-        settings: Settings,
         file_repo: FileRepo,
         project_repo: ProjectRepo,
         chains_service: ChainsService,
     ):
-        self.settings = settings
         self.file_repo = file_repo
         self.project_repo = project_repo
         self.chains_service = chains_service

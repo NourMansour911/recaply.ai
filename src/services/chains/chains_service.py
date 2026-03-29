@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableAssign
 from langsmith import traceable
 from integrations.llm import LCOpenAI
 from models import Segment
-from .output_models import GenerateOutput
+from schemas.chains_output_schemas import GenerateOutput
 
 from .context_chain import build_context_chain
 from .decisions_chain import build_decisions_chain

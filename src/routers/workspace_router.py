@@ -4,9 +4,9 @@ from typing import List
 
 from helpers import get_logger
 from core import get_tenant_id
-from orchestrators import get_upload_orchestrator
-from orchestrators import UploadOrchestrator
-from schemas import UploadFilesResponse
+from orchestrators import get_upload_orchestrator,get_chains_orchestrator
+from orchestrators import UploadOrchestrator,ChainsOrchestrator
+from schemas import UploadFilesResponse,ChainsResponse
 
 
 logger = get_logger(__name__)
@@ -22,6 +22,11 @@ workspace_route = APIRouter(
 async def upload_files(project_id: str,files: List[UploadFile]= File(...),tenant_id: str = Depends(get_tenant_id)
                        ,orchestrator: UploadOrchestrator = Depends(get_upload_orchestrator)):
     return await orchestrator.execute_batch(files=files,tenant_id=tenant_id,project_id=project_id)
+
+@workspace_route.get("/chains",response_model=ChainsResponse,description="get comprehensive meeting report")
+async def get_chains(project_id: str,tenant_id: str = Depends(get_tenant_id)
+                       ,orchestrator: ChainsOrchestrator = Depends(get_chains_orchestrator)):
+    return await orchestrator.execute(tenant_id=tenant_id,project_id=project_id)
     
 
 

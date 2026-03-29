@@ -1,4 +1,5 @@
 from orchestrators.upload_orchestrator import UploadOrchestrator
+from orchestrators.chains_orchestrator import ChainsOrchestrator
 from repos.repos_dependencies import get_project_repo,get_file_repo
 from repos.project_repo import ProjectRepo
 from repos.file_repo import FileRepo
@@ -38,4 +39,16 @@ def get_upload_orchestrator(
         embedding_client=embedding_client,
         chunking_service=chunking_service,
         project_service=project_service
+    )
+    
+def get_chains_orchestrator(
+    project_repo: ProjectRepo = Depends(get_project_repo),
+    file_repo: FileRepo = Depends(get_file_repo),
+    chunking_service: ChunkingService = Depends(get_chunking_service),
+) -> ChainsOrchestrator:
+
+    return ChainsOrchestrator(
+        project_repo=project_repo,
+        file_repo=file_repo,
+        chunking_service=chunking_service,
     )
