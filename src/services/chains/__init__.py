@@ -4,7 +4,6 @@ from . import chains_output_schemas
 from .chains_output_schemas import Conflict
 from .chains_output_schemas import ConflictsOutput
 from .chains_output_schemas import Decision
-from .chains_output_schemas import DecisionType
 from .chains_output_schemas import DecisionsOutput
 from .chains_output_schemas import GenerateOutput
 from .chains_output_schemas import MeetingContextModel
@@ -50,7 +49,6 @@ __all__ = [
     "Conflict",
     "ConflictsOutput",
     "Decision",
-    "DecisionType",
     "DecisionsOutput",
     "GenerateOutput",
     "MeetingContextModel",

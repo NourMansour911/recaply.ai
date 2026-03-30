@@ -23,13 +23,6 @@ class MeetingContextModel(BaseModel):
 # DECISIONS
 # =========================
 
-class DecisionType(str, Enum):
-    BUSINESS = "business"
-    TECHNICAL = "technical"
-    DESIGN = "design"
-    FINANCE = "finance"
-    PRODUCT = "product"
-    OTHER = "other"
 
 
 class Decision(BaseModel):
@@ -37,14 +30,14 @@ class Decision(BaseModel):
     title: Optional[str] = Field(default=None, description="Short title summarizing the decision")
     description: Optional[str] = Field(default=None, description="Detailed explanation of the decision")
 
-    type: Optional[DecisionType] = Field(default=None, description="Category of the decision (business, technical, design, etc.)")
+    type: Optional[str] = Field(default=None, description="Category of the decision (business, technical, design, etc.)")
     priority: Optional[str] = Field(default=None, description="Priority level of the decision (low, medium, high)")
 
     constraints: Optional[List[str]] = Field(default=None, description="Constraints or limitations affecting the decision")
     pricing: Optional[str] = Field(default=None, description="Pricing or budget-related information if applicable")
 
     confidence: Optional[float] = Field(default=None, ge=0, le=1, description="Confidence score of the decision extraction (0 to 1)")
-    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the decision was mentioned")
+    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the decision was mentioned without any additional brackets or prefix")
 
 
 class DecisionsOutput(BaseModel):
@@ -76,7 +69,7 @@ class Task(BaseModel):
     related_decision_ids: Optional[List[str]] = Field(default=None, description="List of related decision IDs")
 
     confidence: Optional[float] = Field(default=None, ge=0, le=1, description="Confidence score of the task extraction (0 to 1)")
-    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the task was mentioned")
+    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the task was mentioned without any additional brackets or prefix")
 
 
 class TasksOutput(BaseModel):
@@ -127,7 +120,7 @@ class Risk(BaseModel):
     related_task_ids: Optional[List[str]] = Field(default=None, description="List of related task IDs")
     related_decision_ids: Optional[List[str]] = Field(default=None, description="List of related decision IDs")
 
-    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the risk was identified")
+    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the risk was identified without any additional brackets or prefix")
 
 
 class RisksOutput(BaseModel):

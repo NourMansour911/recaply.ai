@@ -31,7 +31,7 @@ Segments:
 {segments}
 
 Extract:
-- title
+- title or generate one that fit the context
 - participants (name, role if available)
 - agenda (list)
 - key purpose
