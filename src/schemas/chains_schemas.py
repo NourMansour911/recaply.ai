@@ -4,8 +4,8 @@ from services.chains.chains_output_schemas import GenerateOutput
 class EnrichedSegment(BaseModel):
     id: str
     file_unique_name: str
-    start: Optional[float]
-    end: Optional[float]
+    start: Optional[int]
+    end: Optional[int]
     text: str
     file_type: str
     file_order: int

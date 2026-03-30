@@ -33,8 +33,8 @@ class SubtitleNormalizer(BaseNormalizer):
 
             segment_objects = [Segment(
                 text=seg["text"],
-                start=seg["start"],
-                end=seg["end"],
+                start=seg["start"].__floor__(),
+                end=seg["end"].__ceil__(),
                 speakers=seg["speaker"],
             ) for seg in segments]
 
@@ -67,8 +67,8 @@ class SubtitleNormalizer(BaseNormalizer):
                     )
                 segments.append(Segment(
                     text=sub.text.strip().replace('\n', ' '),
-                    start=start_time,
-                    end=end_time,
+                    start=start_time.__floor__(),
+                    end=end_time.__ceil__(),
                     speakers=None,
                 ))
             return segments
@@ -94,8 +94,8 @@ class SubtitleNormalizer(BaseNormalizer):
                     )
                 segments.append(Segment(
                     text=caption.text.strip().replace('\n', ' '),
-                    start=start_time,
-                    end=end_time,
+                    start=start_time.__floor__(),
+                    end=end_time.__ceil__(),
                     speakers=None,
                 ))
             return segments

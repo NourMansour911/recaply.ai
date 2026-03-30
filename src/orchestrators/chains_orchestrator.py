@@ -45,7 +45,7 @@ class ChainsOrchestrator:
             for seg in file.file_content
         ]
         logger.info("Running generate pipeline", extra={"segments_count": len(segments)})
-        output: GenerateOutput = await self.chains_service.run(segments[0:10])
+        output: GenerateOutput = await self.chains_service.run(segments)
 
         segment_index: Dict[str, tuple[Segment, FileModel]] = {}
 
@@ -60,6 +60,7 @@ class ChainsOrchestrator:
                 seg_id = getattr(item, "segment_id", None)
 
                 if seg_id:
+                    seg_id = str(seg_id).strip("[]")
                     used_segment_ids.add(seg_id)
 
         enriched_segments: List[EnrichedSegment] = []

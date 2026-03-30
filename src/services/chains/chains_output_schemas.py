@@ -3,9 +3,9 @@ from typing import List, Optional
 from enum import Enum
 
 
-# =========================
+
 # CONTEXT
-# =========================
+
 
 class Participant(BaseModel):
     name: Optional[str] = Field(default=None, description="Full name of the participant")
@@ -19,9 +19,9 @@ class MeetingContextModel(BaseModel):
     key_purpose: Optional[str] = Field(default=None, description="Main purpose or goal of the meeting")
 
 
-# =========================
+
 # DECISIONS
-# =========================
+
 
 
 
@@ -37,16 +37,16 @@ class Decision(BaseModel):
     pricing: Optional[str] = Field(default=None, description="Pricing or budget-related information if applicable")
 
     confidence: Optional[float] = Field(default=None, ge=0, le=1, description="Confidence score of the decision extraction (0 to 1)")
-    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the decision was mentioned without any additional brackets or prefix")
+    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the decision was mentioned")
 
 
 class DecisionsOutput(BaseModel):
     decisions: List[Decision] = Field(default_factory=list, description="List of extracted decisions from the meeting")
 
 
-# =========================
+
 # TASKS
-# =========================
+
 
 class Task(BaseModel):
     id: Optional[str] = Field(default=None, description="Unique identifier for the task")
@@ -69,16 +69,16 @@ class Task(BaseModel):
     related_decision_ids: Optional[List[str]] = Field(default=None, description="List of related decision IDs")
 
     confidence: Optional[float] = Field(default=None, ge=0, le=1, description="Confidence score of the task extraction (0 to 1)")
-    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the task was mentioned without any additional brackets or prefix")
+    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the task was mentioned")
 
 
 class TasksOutput(BaseModel):
     tasks: List[Task] = Field(default_factory=list, description="List of extracted tasks from the meeting")
 
 
-# =========================
+
 # CONFLICTS
-# =========================
+
 
 class Conflict(BaseModel):
     type: Optional[List[str]] = Field(
@@ -103,9 +103,9 @@ class ConflictsOutput(BaseModel):
     conflicts: List[Conflict] = Field(default_factory=list, description="List of detected conflicts between decisions and tasks")
 
 
-# =========================
+
 # RISKS
-# =========================
+
 
 class Risk(BaseModel):
     id: Optional[str] = Field(default=None, description="Unique identifier for the risk")
@@ -120,16 +120,16 @@ class Risk(BaseModel):
     related_task_ids: Optional[List[str]] = Field(default=None, description="List of related task IDs")
     related_decision_ids: Optional[List[str]] = Field(default=None, description="List of related decision IDs")
 
-    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the risk was identified without any additional brackets or prefix")
+    segment_id: Optional[str] = Field(default=None, description="Reference to the segment where the risk was identified")
 
 
 class RisksOutput(BaseModel):
     risks: List[Risk] = Field(default_factory=list, description="List of identified risks")
 
 
-# =========================
+
 # SUMMARY
-# =========================
+
 
 class Summary(BaseModel):
     overview: Optional[str] = Field(default=None, description="General overview of the meeting")
@@ -138,9 +138,9 @@ class Summary(BaseModel):
     tasks_summary: Optional[List[str]] = Field(default=None, description="Summary of tasks identified")
 
 
-# =========================
+
 # SENTIMENT
-# =========================
+
 
 class Sentiment(BaseModel):
     overall: Optional[str] = Field(default=None, description="Overall sentiment of the meeting (positive, neutral, negative)")
@@ -149,9 +149,9 @@ class Sentiment(BaseModel):
     segment_ids: Optional[List[str]] = Field(default=None, description="Segments contributing to the sentiment")
 
 
-# =========================
+
 # FINAL OUTPUT
-# =========================
+
 
 class GenerateOutput(BaseModel):
     context: Optional[MeetingContextModel] = Field(default=None, description="Extracted meeting context")

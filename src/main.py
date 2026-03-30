@@ -36,11 +36,11 @@ async def lifespan(app: FastAPI):
   app.state.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID, embedding_size=settings.EMBEDDING_MODEL_SIZE)
   
   
-  app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND,api_key=OPENAI_API_KEYS[0],api_url=settings.OPENAI_API_URL)
+  app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND,api_key=OPENAI_API_KEYS[2],api_url=settings.OPENAI_API_URL)
   app.state.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
   
   # LangChain
-  app.state.langchain_client = LCOpenAI(api_key=OPENAI_API_KEYS[0],api_url=settings.OPENAI_API_URL)
+  app.state.langchain_client = LCOpenAI(api_key=OPENAI_API_KEYS[2],api_url=settings.OPENAI_API_URL)
   app.state.chains = ChainsService(app.state.langchain_client,settings=settings)
   
   logger.info("LangChain client loaded successfully")

@@ -5,8 +5,8 @@ from models import Segment
 
 def format_segments(segments: List[Segment]) -> str:
     
-    return "\n".join([
-        f"[{s.id}] {s.text}"
+    return "\n\n\n".join([
+        f"[{s.id}]\n {s.text}"
         for s in segments
     ])
     

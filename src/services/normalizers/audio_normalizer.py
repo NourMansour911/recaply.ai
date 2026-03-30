@@ -39,7 +39,7 @@ class AudioNormalizer(BaseNormalizer):
         try:
             whisper_model = self.whisper_provider.get_model()
             result, _ = whisper_model.transcribe(audio_path)
-            return [Segment(text=seg.text.strip(), start=float(seg.start), end=float(seg.end), speakers=None) for seg in result]
+            return [Segment(text=seg.text.strip(), start=seg.start.__floor__(), end=seg.end.__ceil__(), speakers=None) for seg in result]
         except ImportError:
             logger.error("Whisper library not installed")
             raise TranscriptionException(file_name=self.file_name, model_error="Whisper library not installed")

@@ -6,8 +6,8 @@ import uuid
 class Segment(BaseModel):
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), description="Segment ID")
     text: str = Field(..., description="Content of the segment")
-    start: Optional[float] = Field(None,  description="Start time in seconds", )
-    end: Optional[float] = Field(None,  description="End time in seconds", )
+    start: Optional[int] = Field(None,  description="Start time in seconds", )
+    end: Optional[int] = Field(None,  description="End time in seconds", )
     speakers: Optional[List[str]] = Field(None, description="Speaker identifier if available")
 
 class FileModel(BaseModel):
@@ -24,7 +24,7 @@ class FileModel(BaseModel):
     file_content: List[Segment]
     file_pushed_at: datetime = Field(default=datetime.now())
     file_language: Optional[str] = Field(default="en", description="Language code (e.g., 'en', 'ar')")
-    file_duration: Optional[float] = Field(None, description="Total duration in seconds", ge=0)
+    file_duration: Optional[int] = Field(None, description="Total duration in seconds", ge=0)
     file_config: Optional[dict] = None
 
     model_config = {  

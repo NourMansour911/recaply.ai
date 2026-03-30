@@ -41,7 +41,7 @@ class TextNormalizer(BaseNormalizer):
         while start_idx < len(words):
             end_idx = start_idx + words_per_segment
             segment_text = " ".join(words[start_idx:end_idx])
-            segments.append(Segment(text=segment_text, start=0.0, end=0.0, speakers=None))
+            segments.append(Segment(text=segment_text, start=0, end=0, speakers=None))
             start_idx = end_idx
         return segments
 
