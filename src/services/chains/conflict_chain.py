@@ -3,11 +3,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnableLambda
 from integrations.llm import LCOpenAI
-from schemas.chains_output_schemas import Conflict
+from services.chains.chains_output_schemas import ConflictsOutput
 
 logger = logging.getLogger(__name__)
 
-conflict_parser = PydanticOutputParser(pydantic_object=Conflict)
+conflict_parser = PydanticOutputParser(pydantic_object=ConflictsOutput)
 
 CONFLICT_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
@@ -39,9 +39,9 @@ def build_conflict_chain(llm: LCOpenAI):
         decisions = inputs["decisions"]
         tasks = inputs["tasks"]
         return {
-            "decisions": [d.dict() for d in decisions],
-            "tasks": [t.dict() for t in tasks],
+            "decisions": decisions,
+            "tasks": tasks,
             "format_instructions": conflict_parser.get_format_instructions()
         }
 
-    return RunnableLambda(prepare_input) | CONFLICT_PROMPT | llm | conflict_parser
+    return RunnableLambda(prepare_input) | CONFLICT_PROMPT | llm | conflict_parser | RunnableLambda(lambda x: x.conflicts)

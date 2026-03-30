@@ -3,7 +3,7 @@ from helpers.logger import get_logger
 from schemas import EnrichedSegment, ChainsResponse
 from repos import FileRepo, ProjectRepo
 from models import Segment, FileModel
-from schemas.chains_output_schemas import GenerateOutput
+from services.chains.chains_output_schemas import GenerateOutput
 from services.chains import ChainsService
 
 logger = get_logger(__name__)
@@ -44,8 +44,8 @@ class ChainsOrchestrator:
             for file in files
             for seg in file.file_content
         ]
-
-        output: GenerateOutput = await self.chains_service.run(segments)
+        logger.info("Running generate pipeline", extra={"segments_count": len(segments)})
+        output: GenerateOutput = await self.chains_service.run(segments[0:10])
 
         segment_index: Dict[str, tuple[Segment, FileModel]] = {}
 

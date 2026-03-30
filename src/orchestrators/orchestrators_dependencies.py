@@ -5,13 +5,16 @@ from repos.project_repo import ProjectRepo
 from repos.file_repo import FileRepo
 from services.services_dependencies import get_project_service,get_storage_service, get_file_detector, get_file_validator,get_chunking_service
 from core.settings import Settings, get_settings
+from core.main_dependencies import get_chains
 from services.files import FileDetectorService, FileStorageService, FileValidatorService
 from services.project_service import ProjectService
+from services.chains import ChainsService
 from fastapi import Depends
 from integrations import get_vdb_client, get_embedding_client 
 from integrations.vector_db import VectorDBFactory
 from integrations.llm import LLMFactory
 from services.chunking import ChunkingService
+
 
 
 
@@ -44,11 +47,11 @@ def get_upload_orchestrator(
 def get_chains_orchestrator(
     project_repo: ProjectRepo = Depends(get_project_repo),
     file_repo: FileRepo = Depends(get_file_repo),
-    chunking_service: ChunkingService = Depends(get_chunking_service),
+    chains_service: ChainsService = Depends(get_chains),
 ) -> ChainsOrchestrator:
 
     return ChainsOrchestrator(
         project_repo=project_repo,
         file_repo=file_repo,
-        chunking_service=chunking_service,
+        chains_service=chains_service,
     )

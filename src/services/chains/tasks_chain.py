@@ -3,12 +3,12 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnableLambda
 from integrations.llm import LCOpenAI
-from schemas.chains_output_schemas import Task
+from services.chains.chains_output_schemas import TasksOutput
 from .utils import format_segments
 
 logger = logging.getLogger(__name__)
 
-task_parser = PydanticOutputParser(pydantic_object=Task)
+task_parser = PydanticOutputParser(pydantic_object=TasksOutput)
 
 TASK_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
@@ -53,9 +53,9 @@ def build_tasks_chain(llm: LCOpenAI):
         decisions = inputs["decisions"]
         return {
             "segments": format_segments(segments),
-            "context": context.json(),
-            "decisions": [d.dict() for d in decisions],
+            "context": context,
+            "decisions": decisions,
             "format_instructions": task_parser.get_format_instructions()
         }
 
-    return RunnableLambda(prepare_input) | TASK_PROMPT | llm | task_parser
+    return RunnableLambda(prepare_input) | TASK_PROMPT | llm | task_parser | RunnableLambda(lambda x: x.tasks)

@@ -3,7 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnableLambda
 from integrations.llm import LCOpenAI
-from schemas.chains_output_schemas import Sentiment
+from services.chains.chains_output_schemas import Sentiment
 from .utils import format_segments
 
 logger = logging.getLogger(__name__)
@@ -40,4 +40,4 @@ def build_sentiment_chain(llm: LCOpenAI):
             "format_instructions": sentiment_parser.get_format_instructions()
         }
 
-    return RunnableLambda(prepare_input) | SENTIMENT_PROMPT | llm | sentiment_parser
+    return RunnableLambda(prepare_input) | SENTIMENT_PROMPT | llm | sentiment_parser 

@@ -1,12 +1,11 @@
 from helpers.logger import get_logger
 import logging
-from schemas import SearchRequest
+from schemas.vectordb_schema import SearchRequest,CollectionChunksResponse, ChunkResponse
 from integrations.vector_db import VectorDBInterface
 from integrations.llm import LLMInterface, DocumentTypeEnum
 from typing import Optional
 from helpers.enums import Signals
 import json
-from schemas import CollectionChunksResponse, ChunkResponse
 from models import ChunkMetadata
 
 

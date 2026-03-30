@@ -1,7 +1,7 @@
 from repos.file_repo import FileRepo
 from repos.project_repo import ProjectRepo
 from integrations.vector_db import VectorDBInterface
-from schemas import DeleteProjectResponse, DeleteTenantResponse
+from schemas.project_schemas import DeleteProjectResponse, DeleteTenantResponse
 from helpers import get_project_path, get_tenant_path, get_logger
 import shutil
 import os

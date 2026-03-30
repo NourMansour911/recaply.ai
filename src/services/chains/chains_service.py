@@ -1,11 +1,12 @@
 import logging
 from typing import List, Dict
 from core import Settings
-from langchain_core.runnables import RunnableAssign
+from langchain_core.runnables import RunnableAssign,RunnablePassthrough
 from langsmith import traceable
 from integrations.llm import LCOpenAI
 from models import Segment
-from schemas.chains_output_schemas import GenerateOutput
+from services.chains.chains_output_schemas import GenerateOutput
+
 
 from .context_chain import build_context_chain
 from .decisions_chain import build_decisions_chain
@@ -52,32 +53,26 @@ class ChainsService:
         sentiment_chain = build_sentiment_chain(self.llms["sentiment"])
 
         
-        decisions_chain = build_decisions_chain(self.llms["decision"])
+        decisions_chain = build_decisions_chain(self.llms["decisions"])
         tasks_chain = build_tasks_chain(self.llms["tasks"])
         conflicts_chain = build_conflict_chain(self.llms["conflict"])
         risks_chain = build_risks_chain(self.llms["risk"])
         summary_chain = build_summary_chain(self.llms["summary"])
 
-        pipeline = (
-            RunnableAssign({
-                "context": context_chain,
-                "sentiment": sentiment_chain
-            })
-            | RunnableAssign({
-                "decisions": decisions_chain
-            })
-            | RunnableAssign({
-                "tasks": tasks_chain
-            })
-            | RunnableAssign({
-                "conflicts": conflicts_chain,
-                "risks": risks_chain
-            })
-            | RunnableAssign({
-                "summary": summary_chain
-            })
-        )
-
+        pipeline =  RunnablePassthrough.assign(
+                context= context_chain,
+                sentiment= sentiment_chain
+            )| RunnablePassthrough.assign(
+                    decisions= decisions_chain
+            ) | RunnablePassthrough.assign(
+                    tasks= tasks_chain
+            ) | RunnablePassthrough.assign(
+                    conflicts= conflicts_chain,
+                risks= risks_chain
+            ) | RunnablePassthrough.assign(
+                    summary= summary_chain
+            )
+        logger.info(f"Pipeline built {pipeline}")
         return pipeline
 
     def _get_pipeline(self):

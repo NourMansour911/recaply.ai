@@ -13,7 +13,6 @@ logger = get_logger(__name__)
 class HuggingFaceProvider(LLMInterface):
     def __init__(
         self,
-
     ):
         self.embedding_model_id = None
         self.embedding_size = None

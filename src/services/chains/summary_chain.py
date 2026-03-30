@@ -3,7 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnableLambda
 from integrations.llm import LCOpenAI
-from schemas.chains_output_schemas import Summary
+from services.chains.chains_output_schemas import Summary
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +46,12 @@ Extract summary with:
 def build_summary_chain(llm: LCOpenAI):
     def prepare_input(inputs: dict):
         return {
-            "context": inputs["context"].json(),
-            "decisions": [d.dict() for d in inputs["decisions"]],
-            "tasks": [t.dict() for t in inputs["tasks"]],
-            "conflicts": [c.dict() for c in inputs["conflicts"]],
-            "risks": [r.dict() for r in inputs["risks"]],
+            "context": inputs["context"],
+            "decisions":  inputs["decisions"],
+            "tasks": inputs["tasks"],
+            "conflicts": inputs["conflicts"],
+            "risks": inputs["risks"],
             "format_instructions": summary_parser.get_format_instructions()
         }
 
-    return RunnableLambda(prepare_input) | SUMMARY_PROMPT | llm | summary_parser
+    return RunnableLambda(prepare_input) | SUMMARY_PROMPT | llm | summary_parser 

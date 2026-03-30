@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from .chains_output_schemas import GenerateOutput
+from services.chains.chains_output_schemas import GenerateOutput
 class EnrichedSegment(BaseModel):
     id: str
     file_unique_name: str
