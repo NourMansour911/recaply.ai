@@ -29,7 +29,8 @@ class Settings(BaseSettings):
     CHUNK_MIN_SIZE: int
     CHUNK_MAX_SIZE: int
     CHUNKS_SIMILARITY_THRESHOLD: float
-
+    
+    COHERE_API_KEY : str
     LANGSMITH_API_KEY : str
     OPENAI_API_URL : str
     OPENAI_API_KEY : str

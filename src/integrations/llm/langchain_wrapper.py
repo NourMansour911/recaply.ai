@@ -12,7 +12,7 @@ class LCOpenAI:
         self,
         model: str,
         temperature: float = 0.2,
-        max_tokens: int = 200000,
+        max_tokens: int = 2000000,
     ) -> ChatOpenAI:
 
         return ChatOpenAI(
