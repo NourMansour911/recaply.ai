@@ -3,6 +3,8 @@
 from . import chains_schemas
 from .chains_schemas import ChainsResponse
 from .chains_schemas import EnrichedSegment
+from . import chat_schema
+from .chat_schema import ChatRequest
 from . import files_schemas
 from .files_schemas import UploadFilesResponse
 from . import project_schemas
@@ -16,10 +18,12 @@ from .vectordb_schema import SearchRequest
 
 __all__ = [
     "chains_schemas",
+    "chat_schema",
     "files_schemas",
     "project_schemas",
     "vectordb_schema",
     "ChainsResponse",
+    "ChatRequest",
     "ChunkResponse",
     "ChunksQuerySchema",
     "CollectionChunksResponse",

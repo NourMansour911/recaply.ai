@@ -18,8 +18,6 @@ from .llm_factory import LLMFactory
 from . import llm_interface
 from .llm_interface import LLMInterface
 from . import providers
-from . import safe_tracer
-from .safe_tracer import SafeTracer
 
 __all__ = [
     "langchain_wrapper",
@@ -28,7 +26,6 @@ __all__ = [
     "llm_factory",
     "llm_interface",
     "providers",
-    "safe_tracer",
     "DocumentTypeEnum",
     "LCOpenAI",
     "LLMAPINotAvailableException",
@@ -41,5 +38,4 @@ __all__ = [
     "LLMModelNotSetException",
     "LLMRateLimitException",
     "OpenAIEnums",
-    "SafeTracer",
 ]

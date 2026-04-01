@@ -12,6 +12,7 @@ from .vectordb_router import vdb_info
 from .vectordb_router import vdb_info
 from .vectordb_router import vdb_push
 from . import workspace_router
+from .workspace_router import chat
 from .workspace_router import get_chains
 from .workspace_router import upload_files
 
@@ -20,6 +21,7 @@ __all__ = [
     "projects_router",
     "vectordb_router",
     "workspace_router",
+    "chat",
     "delete_file",
     "delete_project",
     "delete_tenant",

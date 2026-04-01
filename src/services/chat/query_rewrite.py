@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda, Runnable
+from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 
 from langchain_openai import ChatOpenAI
@@ -11,33 +12,32 @@ logger = logging.getLogger(__name__)
 
 
 class MultiQueryOutput(BaseModel):
-
-    queries: List[str] = Field(description="Exactly 2 rewritten queries optimized for retrieval")
-
+    queries: List[str] = Field(..., description="Exactly 2 rewritten queries optimized for retrieval")
 
 
 MULTI_QUERY_PROMPT = ChatPromptTemplate.from_messages([
-    (
-        "system",
-        """
+        (
+            "system",
+            """
 You are a query rewriting assistant for a RAG system.
 
 Your job:
 - Understand the user query and chat history
 - Clarify the query if needed
-- Generate EXACTLY 2 different search queries
+- Generate EXACTLY 2 distinct search queries
 
 Rules:
-- Queries must be optimized for retrieval
-- Each query should cover a different semantic angle
-- Keep original intent
+- Queries must be concise, keyword-rich, and optimized for retrieval
+- Each query must cover a different semantic angle
+- Keep the original intent intact
 - Do NOT answer the question
-- Keep queries concise and keyword-rich
+- Output MUST be valid JSON:
+{format_instructions}
 """
-    ),
-    (
-        "human",
-        """
+        ),
+        (
+            "human",
+            """
 Chat History:
 {history}
 
@@ -46,50 +46,30 @@ User Query:
 
 Generate exactly 2 optimized search queries.
 """
-    )
-])
+        )
+    ])
 
 
+parser = PydanticOutputParser(pydantic_object=MultiQueryOutput)
+def build_requery_chain(llm: ChatOpenAI) -> Runnable:
 
-
-def build_multi_query_chain(llm: ChatOpenAI) -> Runnable:
-
-    structured_llm = llm.with_structured_output(MultiQueryOutput)
-
-    def prepare_input(inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Normalize inputs for the prompt.
-        """
-        return {
-            "query": inputs["query"],
-            "history": inputs.get("history", "")
-        }
-
-    def post_process(output: MultiQueryOutput) -> List[str]:
-
-        queries = [q.strip() for q in output.queries if q.strip()]
-
-        
-        seen = set()
-        deduped = []
-        for q in queries:
-            if q not in seen:
-                seen.add(q)
-                deduped.append(q)
-
-        
-        final_queries = deduped[:2]
-
-        logger.info(f"Generated queries: {final_queries}")
-
-        return final_queries
 
     
+    def prepare_input(inputs: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            "query": inputs["query"],
+            "history": inputs.get("history", ""),
+            "format_instructions": parser.get_format_instructions()
+        }
+
+
+
     chain = (
         RunnableLambda(prepare_input)
         | MULTI_QUERY_PROMPT
-        | structured_llm
-        | RunnableLambda(post_process)
+        | llm
+        | parser
+        | RunnableLambda(lambda x: x.queries)
     )
 
     return chain

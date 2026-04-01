@@ -10,7 +10,7 @@ from integrations import get_whisper_provider
 from integrations.vector_db import VectorDBFactory
 from integrations.llm import LLMFactory,LCOpenAI
 from services.chains import ChainsService
-import langsmith
+from services.chat import ChatService
 import os
 settings = get_settings()
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -42,6 +42,7 @@ async def lifespan(app: FastAPI):
   # LangChain
   app.state.langchain_client = LCOpenAI(api_key=OPENAI_API_KEYS[2],api_url=settings.OPENAI_API_URL)
   app.state.chains = ChainsService(app.state.langchain_client,settings=settings)
+  app.state.chat = ChatService(app.state.langchain_client,settings=settings)
   
   logger.info("LangChain client loaded successfully")
 

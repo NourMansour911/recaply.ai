@@ -21,4 +21,6 @@ def get_db_client(request: Request):
 
 def get_chains(request: Request):
     return request.app.state.chains
+def get_chat(request: Request):
+    return request.app.state.chat
 
