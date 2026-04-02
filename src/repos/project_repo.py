@@ -3,7 +3,7 @@ from helpers.enums import DBEnum
 from helpers.logger import get_logger
 import logging
 
-logger = get_logger("project_repo", level=logging.DEBUG)
+logger = get_logger("project_repo")
 
 
 class ProjectRepo:

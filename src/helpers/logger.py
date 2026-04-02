@@ -8,10 +8,25 @@ LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "logs.log")
 
-def get_logger(name: str, level=logging.DEBUG):
+def get_logger(name: str, level: str="error"):
 
     logger = logging.getLogger(name)
-    logger.setLevel(level)
+    try:
+        match level.lower():
+            case "debug":
+                logger.setLevel(logging.DEBUG)
+            case "info":
+                logger.setLevel(logging.INFO)
+            case "warning":
+                logger.setLevel(logging.WARNING)
+            case "error":
+                logger.setLevel(logging.ERROR)
+            case "critical":
+                logger.setLevel(logging.CRITICAL)
+            case _:
+                logger.setLevel(logging.ERROR)
+    except Exception:
+        logger.setLevel(logging.ERROR)
 
     if not logger.hasHandlers():
         # Console handler

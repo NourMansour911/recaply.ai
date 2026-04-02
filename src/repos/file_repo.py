@@ -4,7 +4,7 @@ from helpers.logger import get_logger
 from bson import ObjectId
 import logging
 
-logger = get_logger("file_repo", level=logging.DEBUG)
+logger = get_logger("file_repo")
 
 
 class FileRepo:

@@ -15,7 +15,7 @@ from .vdb_exceptions import (
 )
 from ..service_exceptions import ProcessingError
 
-logger = get_logger("vectordb_service", level=logging.DEBUG)
+logger = get_logger("vectordb_service")
 
 
 class VDBService:

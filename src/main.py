@@ -12,13 +12,14 @@ from integrations.llm import LLMFactory,LCOpenAI
 from services.chains import ChainsService
 from services.chat import ChatService
 import os
+
 settings = get_settings()
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_API_KEY"] = settings.LANGSMITH_API_KEY
 os.environ["LANGCHAIN_PROJECT"] = settings.APP_NAME
 
 OPENAI_API_KEYS = settings.OPENAI_API_KEY.split(",")
-logger = get_logger(__name__)
+logger = get_logger(__name__,level="debug")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
   # Exception handler

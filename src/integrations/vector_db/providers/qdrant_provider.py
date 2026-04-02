@@ -401,7 +401,6 @@ class QdrantDBProvider(VectorDBInterface):
 
 
             if not bm25:
-                
                 raise VectorDBCollectionNotFoundError(
                     f"bm25 not found for {collection_name} does not exist (BM25 MAP KEYS: {list(self.bm25_map.keys())})"
                 )
