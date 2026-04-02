@@ -52,11 +52,7 @@ class ProjectService:
             ) from e
 
         
-        collection_name = self.vdb_client.create_collection_name(
-            project_id=project_id,
-            tenant_id=tenant_id
-        )
-        self._delete_collection_strict(collection_name)
+        self._delete_collection_strict(project.vdb_collection_name)
 
     
         try:

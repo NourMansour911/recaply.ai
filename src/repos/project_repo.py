@@ -30,7 +30,7 @@ class ProjectRepo:
 
     async def create_project(self, project: ProjectModel):
         result = await self.collection.insert_one(
-            project.model_dump(by_alias=True, exclude_unset=True)
+            project.model_dump(by_alias=True, exclude_none=True)
         )
         project.iid = result.inserted_id
         return project
@@ -62,7 +62,7 @@ class ProjectRepo:
         })
         return result.deleted_count
 
-    async def get_project_or_create_one(self, tenant_id: str, project_id: str) -> ProjectModel:
+    async def get_project_or_create_one(self, tenant_id: str, project_id: str,vdb_collection_name: str) -> ProjectModel:
         logger.debug(f"Fetching project with ID: {project_id}")
 
         record = await self.collection.find_one({
@@ -72,7 +72,7 @@ class ProjectRepo:
 
         if record is None:
             logger.info(f"No project found with ID {project_id}, creating new one")
-            project = ProjectModel(project_id=project_id, tenant_id=tenant_id)
+            project = ProjectModel(project_id=project_id, tenant_id=tenant_id,vdb_collection_name=vdb_collection_name)
             project = await self.create_project(project=project)
             return project
 

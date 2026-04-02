@@ -36,19 +36,21 @@ async def lifespan(app: FastAPI):
   app.state.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID, embedding_size=settings.EMBEDDING_MODEL_SIZE)
   
   
-  app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND,api_key=OPENAI_API_KEYS[2],api_url=settings.OPENAI_API_URL)
+  app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND,api_key=OPENAI_API_KEYS[1],api_url=settings.OPENAI_API_URL)
   app.state.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
-  
-  # LangChain
-  app.state.langchain_client = LCOpenAI(api_key=OPENAI_API_KEYS[2],api_url=settings.OPENAI_API_URL)
-  app.state.chains = ChainsService(app.state.langchain_client,settings=settings)
-  app.state.chat = ChatService(app.state.langchain_client,settings=settings)
   
   logger.info("LangChain client loaded successfully")
 
   vdb_provider_factory = VectorDBFactory(settings)
   app.state.vdb_client = vdb_provider_factory.create(provider=settings.VECTOR_DB_BACKEND)
   app.state.vdb_client.connect()
+  collections = app.state.vdb_client.list_all_collections()
+
+  logger.info(f"vdb collections {collections}")
+
+  app.state.langchain_client = LCOpenAI(api_key=OPENAI_API_KEYS[3],api_url=settings.OPENAI_API_URL)
+  app.state.chains = ChainsService(app.state.langchain_client,settings=settings)
+  app.state.chat = ChatService(embedding_client=app.state.embedding_client,lc_openai_client=app.state.langchain_client,vdb_client=app.state.vdb_client,settings=settings)
   
 
   whisper_provider = get_whisper_provider()

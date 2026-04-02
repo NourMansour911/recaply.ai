@@ -6,6 +6,7 @@ class ProjectModel(BaseModel):
     iid: Optional[ObjectId] = Field(None, alias="_id")
     tenant_id: str
     project_id: str = Field(...,min_length=1)
+    vdb_collection_name: str
     project_pushed_at: datetime = Field(default=datetime.now())
     
     @field_validator("project_id")

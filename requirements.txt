@@ -14,3 +14,4 @@ pysrt== 1.1.2
 webvtt-py== 0.5.1
 sentence-transformers== 5.2.0
 langsmith == 0.4.49
+ spacy==3.8.14

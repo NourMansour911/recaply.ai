@@ -1,4 +1,4 @@
-# integrations/vector_db/providers/qdrant_provider.py
+
 from qdrant_client import models, QdrantClient
 from ..vdb_interface import VectorDBInterface
 from typing import List, Optional, Dict, Any
@@ -16,25 +16,48 @@ from ..exceptions import (
 logger = get_logger(__name__)
 
 
-class QdrantDBProvider(VectorDBInterface):
-    def __init__(self, db_path: str, distance_method: str, vector_size: int):
-        self.client: Optional[QdrantClient] = None
-        self.db_path = db_path
-        self.vector_size = vector_size
-        self.distance_method = {
-            "cosine": models.Distance.COSINE,
-            "dot": models.Distance.DOT
-        }.get(distance_method, models.Distance.COSINE)
+from .bm25 import BM25Encoder
 
-    def connect(self):
+class QdrantDBProvider(VectorDBInterface):
+
+    def __init__(self,  distance_method: str, vector_size: int):
+        self.client: Optional[QdrantClient] = None
+
+        self.vector_size = vector_size
+        self.distance_method = None
+        if distance_method == "cosine":
+            self.distance_method = models.Distance.COSINE
+        elif distance_method == "dot":
+            self.distance_method = models.Distance.DOT
+
+        self.bm25_map: Dict[str, BM25Encoder] = {}
+        
+        
+
+    def connect(self) -> None:
         try:
-            self.client = QdrantClient(path=self.db_path)
+            self.client = QdrantClient(host="localhost", port=6333)
+            logger.info("[CONNECT SUCCESS]")
         except Exception as e:
             logger.error(f"Failed to connect to Qdrant: {e}")
-            raise VectorDBConnectionError(f"Failed to connect to Qdrant: {e}") from e
+            raise VectorDBConnectionError(
+                f"Failed to connect to Qdrant: {e}"
+            ) from e
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         self.client = None
+        logger.info("[DISCONNECT] Client cleared")
+
+    def fit_bm25(self, collection_name: str, texts: List[str]):
+        bm25 = BM25Encoder()
+        bm25.fit(texts)
+        self.bm25_map[collection_name] = bm25
+        logger.info(
+            f"[BM25] Fitted for '{collection_name}' "
+            f"with {len(texts)} documents, "
+            f"vocab size: {len(bm25.vocab)}"
+        )
+
 
     def is_collection_existed(self, collection_name: str) -> bool:
         return self.client.collection_exists(collection_name=collection_name)
@@ -45,23 +68,12 @@ class QdrantDBProvider(VectorDBInterface):
     def create_collection_name(self, project_id: str, tenant_id: str) -> str:
         return f"vdb_{tenant_id}_{project_id}".lower().strip()
 
-    def get_collection_info(self, collection_name: str) -> dict:
-        try:
-            if not self.is_collection_existed(collection_name):
-                raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
-            return self.client.get_collection(collection_name=collection_name)
-        except VectorDBCollectionNotFoundError:
-            raise
-        except Exception as e:
-            logger.error(f"Failed to fetch collection info: {e}")
-            raise VectorDBFetchError(f"Failed to fetch collection info: {e}") from e
-
-    def delete_collection(self, collection_name: str):
-        if self.is_collection_existed(collection_name):
-            return self.client.delete_collection(collection_name=collection_name)
-        raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
-
-    def create_collection(self, collection_name: str, embedding_size: int, do_reset: bool = False):
+    def create_collection(
+        self,
+        collection_name: str,
+        embedding_size: int,
+        do_reset: bool = False
+    ) -> bool:
         if do_reset and self.is_collection_existed(collection_name):
             self.delete_collection(collection_name)
             logger.info(f"Deleted collection {collection_name} for reset")
@@ -72,22 +84,57 @@ class QdrantDBProvider(VectorDBInterface):
                 vectors_config=models.VectorParams(
                     size=embedding_size,
                     distance=self.distance_method
-                )
+                ),
+                sparse_vectors_config={
+                    "bm25": models.SparseVectorParams()
+                }
             )
             logger.info(f"Created collection {collection_name}")
             return True
         return False
 
-    async def _ensure_collection_exists(self, collection_name: str) -> bool:
+    async def ensure_collection_exists(self, collection_name: str) -> bool:
         try:
-            if self.is_collection_existed(collection_name):
-                self.delete_collection(collection_name)
-                logger.info(f"Deleted existing collection {collection_name}")
-            self.create_collection(collection_name, embedding_size=self.vector_size)
+            if not self.is_collection_existed(collection_name):
+                self.create_collection(
+                    collection_name,
+                    embedding_size=self.vector_size
+                )
+                logger.info(f"Created collection {collection_name}")
             return True
         except Exception as e:
             logger.error(f"Failed to ensure collection exists: {e}")
-            raise VectorDBCollectionNotFoundError(f"Failed to ensure collection exists: {e}") from e
+            raise VectorDBCollectionNotFoundError(
+                f"Failed to ensure collection exists: {e}"
+            ) from e
+
+    def delete_collection(self, collection_name: str) -> None:
+        if self.is_collection_existed(collection_name):
+
+            self.bm25_map.pop(collection_name, None)
+            self.client.delete_collection(collection_name=collection_name)
+            return
+        raise VectorDBCollectionNotFoundError(
+            f"Collection {collection_name} does not exist"
+        )
+
+    def get_collection_info(self, collection_name: str) -> dict:
+        try:
+            if not self.is_collection_existed(collection_name):
+                raise VectorDBCollectionNotFoundError(
+                    f"Collection {collection_name} does not exist"
+                )
+            return self.client.get_collection(
+                collection_name=collection_name
+            )
+        except VectorDBCollectionNotFoundError:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to fetch collection info: {e}")
+            raise VectorDBFetchError(
+                f"Failed to fetch collection info: {e}"
+            ) from e
+
 
     async def store_batch(
         self,
@@ -101,10 +148,16 @@ class QdrantDBProvider(VectorDBInterface):
         if not texts or not vectors or not metadatas:
             logger.warning("Skipping empty batch")
             return False
-        if not (len(texts) == len(vectors) == len(metadatas) == len(record_ids)):
+        if not (
+            len(texts) == len(vectors)
+            == len(metadatas) == len(record_ids)
+        ):
             raise VectorDBBatchInsertError("Batch size mismatch")
 
-        await self._ensure_collection_exists(collection_name)
+        await self.ensure_collection_exists(collection_name)
+
+
+        self.fit_bm25(collection_name, texts)
 
         success = self._insert_many(
             collection_name=collection_name,
@@ -116,8 +169,12 @@ class QdrantDBProvider(VectorDBInterface):
         )
 
         if not success:
-            raise VectorDBBatchInsertError(f"Failed to insert batch into {collection_name}")
-        logger.info(f"Stored batch of {len(texts)} chunks in {collection_name}")
+            raise VectorDBBatchInsertError(
+                f"Failed to insert batch into {collection_name}"
+            )
+        logger.info(
+            f"Stored batch of {len(texts)} chunks in {collection_name}"
+        )
         return True
 
     def _insert_many(
@@ -128,41 +185,110 @@ class QdrantDBProvider(VectorDBInterface):
         record_ids: list,
         metadata: list = None,
         batch_size: int = 50
-    ):
+    ) -> bool:
         if metadata is None:
             metadata = [None] * len(texts)
         if not self.is_collection_existed(collection_name):
-            raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
+            raise VectorDBCollectionNotFoundError(
+                f"Collection {collection_name} does not exist"
+            )
+
+        bm25 = self.bm25_map.get(collection_name)
 
         for i in range(0, len(texts), batch_size):
-            batch_points = [
-                models.PointStruct(
-                    id=record_ids[j],
-                    vector=vectors[j],
-                    payload={"text": texts[j], "metadata": metadata[j]}
+            batch_points = []
+
+            for j in range(i, min(i + batch_size, len(texts))):
+
+               
+                point_vector: Any = vectors[j]
+
+                if bm25:
+                    indices, values = bm25.encode(texts[j])
+                    if indices and values:
+                        point_vector = {
+                            "": vectors[j],
+                            "bm25": models.SparseVector(
+                                indices=indices, values=values
+                            )
+                        }
+
+                meta = metadata[j]
+                if meta is not None and hasattr(meta, "dict"):
+                    meta = meta.dict()
+                elif meta is None:
+                    meta = {}
+
+                batch_points.append(
+                    models.PointStruct(
+                        id=record_ids[j],
+                        vector=point_vector,
+                        payload={
+                            "text": texts[j],
+                            "metadata": meta
+                        }
+                    )
                 )
-                for j in range(i, min(i + batch_size, len(texts)))
-            ]
+
             try:
-                self.client.upsert(collection_name=collection_name, points=batch_points)
+                self.client.upsert(
+                    collection_name=collection_name,
+                    points=batch_points
+                )
             except Exception as e:
                 logger.error(f"Batch insert failed: {e}")
-                raise VectorDBBatchInsertError(f"Batch insert failed: {e}") from e
+                raise VectorDBBatchInsertError(
+                    f"Batch insert failed: {e}"
+                ) from e
+
         return True
 
-    def insert_one(self, collection_name: str, text: str, vector: list,
-                   metadata: dict = None, record_id: str = None):
+    def insert_one(
+        self,
+        collection_name: str,
+        text: str,
+        vector: List[float],
+        metadata: Optional[Dict[str, Any]] = None,
+        record_id: Optional[str] = None
+    ) -> bool:
         if not self.is_collection_existed(collection_name):
-            raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
+            raise VectorDBCollectionNotFoundError(
+                f"Collection {collection_name} does not exist"
+            )
         try:
+            point_vector: Any = vector
+            bm25 = self.bm25_map.get(collection_name)
+
+            if bm25:
+                indices, values = bm25.encode(text)
+                if indices and values:
+                    point_vector = {
+                        "": vector,
+                        "bm25": models.SparseVector(
+                            indices=indices, values=values
+                        )
+                    }
+
             self.client.upsert(
                 collection_name=collection_name,
-                points=[models.PointStruct(id=record_id, vector=vector, payload={"text": text, "metadata": metadata})]
+                points=[
+                    models.PointStruct(
+                        id=record_id,
+                        vector=point_vector,
+                        payload={
+                            "text": text,
+                            "metadata": metadata or {}
+                        }
+                    )
+                ]
             )
             return True
         except Exception as e:
             logger.error(f"Single insert failed: {e}")
-            raise VectorDBInsertError(f"Single insert failed: {e}") from e
+            raise VectorDBInsertError(
+                f"Single insert failed: {e}"
+            ) from e
+
 
     def get_collection_chunks(
         self,
@@ -174,35 +300,73 @@ class QdrantDBProvider(VectorDBInterface):
         if page < 1:
             page = 1
         if not self.is_collection_existed(collection_name):
-            raise VectorDBCollectionNotFoundError(f"Collection {collection_name} does not exist")
+            raise VectorDBCollectionNotFoundError(
+                f"Collection {collection_name} does not exist"
+            )
 
         try:
-            collection_info = self.client.get_collection(collection_name=collection_name)
-            total_points = collection_info.points_count
-            offset = (page - 1) * limit
-            points, _ = self.client.scroll(
-                collection_name=collection_name,
-                limit=limit,
-                offset=offset,
-                with_payload=True,
-                with_vectors=False
+            collection_info = self.client.get_collection(
+                collection_name=collection_name
             )
+            total_points = collection_info.points_count
+
+
+            offset = None
+            points = []
+
+            for current_page in range(1, page + 1):
+                batch, next_offset = self.client.scroll(
+                    collection_name=collection_name,
+                    limit=limit,
+                    offset=offset,
+                    with_payload=True,
+                    with_vectors=False
+                )
+                if current_page == page:
+                    points = batch
+                    break
+                offset = next_offset
+                if offset is None:
+                    points = []
+                    break
+
             chunks = []
             for p in points:
                 payload = p.payload or {}
                 text = payload.get("text", "")
                 if text_limit and len(text) > text_limit:
                     text = text[:text_limit]
-                chunks.append({"id": str(p.id), "text": text, "metadata": payload.get("metadata", {})})
+                chunks.append({
+                    "id": str(p.id),
+                    "text": text,
+                    "metadata": payload.get("metadata", {})
+                })
 
-            total_pages = (total_points + limit - 1) // limit
-            return {"collection_name": collection_name, "total_chunks": total_points, "page": page,
-                    "total_pages": total_pages, "returned_chunks": len(chunks), "chunks": chunks}
+            total_pages = (
+                (total_points + limit - 1) // limit
+                if total_points else 0
+            )
+            return {
+                "collection_name": collection_name,
+                "total_chunks": total_points,
+                "page": page,
+                "total_pages": total_pages,
+                "returned_chunks": len(chunks),
+                "chunks": chunks
+            }
         except Exception as e:
             logger.error(f"Failed fetching chunks: {e}")
-            raise VectorDBFetchError(f"Failed fetching chunks: {e}") from e
+            raise VectorDBFetchError(
+                f"Failed fetching chunks: {e}"
+            ) from e
 
-    def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
+
+    def search_by_vector(
+        self,
+        collection_name: str,
+        vector: List[float],
+        limit: int = 20
+    ) -> List[Dict[str, Any]]:
         try:
             results = self.client.query_points(
                 collection_name=collection_name,
@@ -210,60 +374,68 @@ class QdrantDBProvider(VectorDBInterface):
                 limit=limit,
                 with_payload=True
             )
-            return results.points
+            return [
+                {
+                    "id": str(p.id),
+                    "score": p.score,
+                    "text": (p.payload or {}).get("text", ""),
+                    "metadata": (p.payload or {}).get("metadata", {})
+                }
+                for p in results.points
+            ]
         except Exception as e:
             logger.error(f"Vector search failed: {e}")
-            raise VectorDBSearchError(f"Vector search failed: {e}") from e
+            raise VectorDBSearchError(
+                f"Vector search failed: {e}"
+            ) from e
 
-    async def hybrid_search(self, collection_name: str,
-                            query_vector: List[float],
-                            query_text: str = None,
-                            limit: int = 10,
-                            filter_conditions: Dict[str, Any] = None) -> List[Dict]:
+    async def search_by_keyword(
+        self,
+        collection_name: str,
+        query_text: str,
+        limit: int = 20
+    ) -> List[Dict[str, Any]]:
+        logger.info(f"[BM25] collection: {collection_name} ")
         try:
-            # Vector search with optional filtering
-            search_params = {
-                "collection_name": collection_name,
-                "query": query_vector,
-                "limit": limit,
-                "with_payload": True,
-                "with_vectors": True
-            }
-            if filter_conditions:
-                must_conditions = [
-                    models.FieldCondition(key=f"metadata.{k}", match=models.MatchValue(value=v))
-                    for k, v in filter_conditions.items()
-                ]
-                if must_conditions:
-                    search_params["query_filter"] = models.Filter(must=must_conditions)
+            bm25 = self.bm25_map.get(collection_name)
 
-            results = self.client.query_points(**search_params)
-            return results.points
-        except Exception as e:
-            logger.error(f"Hybrid search failed: {e}")
-            raise VectorDBSearchError(f"Hybrid search failed: {e}") from e
 
-    async def keyword_search(self, collection_name: str,
-                             query_text: str,
-                             limit: int = 10,
-                             filter_conditions: Dict[str, Any] = None) -> List[Dict]:
-        try:
-            search_params = {
-                "collection_name": collection_name,
-                "query": query_text,
-                "limit": limit,
-                "with_payload": True
-            }
-            if filter_conditions:
-                must_conditions = [
-                    models.FieldCondition(key=f"metadata.{k}", match=models.MatchValue(value=v))
-                    for k, v in filter_conditions.items()
-                ]
-                if must_conditions:
-                    search_params["query_filter"] = models.Filter(must=must_conditions)
+            if not bm25:
+                
+                raise VectorDBCollectionNotFoundError(
+                    f"bm25 not found for {collection_name} does not exist (BM25 MAP KEYS: {list(self.bm25_map.keys())})"
+                )
 
-            results = self.client.query_points(**search_params)
-            return results.points
+            indices, values = bm25.encode(query_text)
+
+            if not indices:
+                logger.warning(
+                    f"[BM25] No matching terms for: '{query_text}'"
+                )
+                return []
+
+            results = self.client.query_points(
+                collection_name=collection_name,
+                query=models.SparseVector(
+                    indices=indices, values=values
+                ),
+                using="bm25",
+                limit=limit,
+                with_payload=True
+            )
+
+            return [
+                {
+                    "id": str(p.id),
+                    "score": p.score,
+                    "text": (p.payload or {}).get("text", ""),
+                    "metadata": (p.payload or {}).get("metadata", {})
+                }
+                for p in results.points
+            ]
+
         except Exception as e:
             logger.error(f"Keyword search failed: {e}")
-            raise VectorDBSearchError(f"Keyword search failed: {e}") from e
+            raise VectorDBSearchError(
+                f"Keyword search failed: {e}"
+            ) from e

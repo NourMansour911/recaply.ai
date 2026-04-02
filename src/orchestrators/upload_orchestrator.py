@@ -51,7 +51,7 @@ class UploadOrchestrator:
         project: ProjectModel,
 
     ):
-        logger.info("Starting upload flow")
+
 
         
         file_type = self.detector.detect(file)
@@ -79,9 +79,7 @@ class UploadOrchestrator:
         file_duration = normalized_segments[-1].end
         
         
-        logger.info(
-            f"Using project: {project.project_id} (DB ID: {str(project.iid)})"
-        )
+
         
         file_model = FileModel(
             file_tenant_id=project.tenant_id,
@@ -99,16 +97,7 @@ class UploadOrchestrator:
         
         file_iid = await self.file_repo.add_file(file_model)
         file_model.iid = file_iid
-        
-        logger.info(
-            "Upload flow completed",
-            extra={
-                "file_path": file_path,
-                "file_type": file_type,
-                "file_size": file_size_mb,
-            },
-        )
-        
+
         
 
         return file_model
@@ -124,8 +113,9 @@ class UploadOrchestrator:
         if await self.project_repo.project_exists(project_id=project_id,tenant_id=tenant_id):
            await self.project_service.delete_project(project_id=project_id,tenant_id=tenant_id)
         
-        project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id) 
-        logger.info("Starting batch upload flow", extra={"files_count": len(files)})
+        vectorDB_collection_name = self.vdb_client.create_collection_name(project_id=project_id,tenant_id=tenant_id)
+        logger.info(f"Using vectorDB collection: {vectorDB_collection_name}")
+        project : ProjectModel= await self.project_repo.get_project_or_create_one(project_id=project_id, tenant_id=tenant_id,vdb_collection_name=vectorDB_collection_name) 
         
         
         
@@ -147,15 +137,13 @@ class UploadOrchestrator:
             total_chunks += len(texts)
             total_files += 1
         
-        vectorDB_collection = self.vdb_client.create_collection_name(project_id=project_id,tenant_id=tenant_id)
         project_record_ids = list(range(total_chunks))
-        logger.info(f"{len(project_texts)},{len(project_vectors)},{len(project_record_ids)},{len(project_metadatas)}")
-        chunks_stored = await self.vdb_client.store_batch(collection_name=vectorDB_collection,batch_size=250,texts=project_texts, vectors=project_vectors,record_ids=project_record_ids,metadatas=project_metadatas)
+        self.vdb_client.fit_bm25(collection_name=vectorDB_collection_name,texts=project_texts)
+        chunks_stored = await self.vdb_client.store_batch(collection_name=vectorDB_collection_name,batch_size=250,texts=project_texts, vectors=project_vectors,record_ids=project_record_ids,metadatas=project_metadatas)
         
         if chunks_stored:
-            logger.info("Chunks stored successfully")
             return UploadFilesResponse(total_files=total_files,
-                                    vectorDB_collection=vectorDB_collection,
+                                    vectorDB_collection=vectorDB_collection_name,
                                     project_iid=str(project.iid),
                                     total_chunks=total_chunks,
                                     files=normalized_files
