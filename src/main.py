@@ -9,6 +9,7 @@ from helpers.logger import get_logger
 from integrations import get_whisper_provider
 from integrations.vector_db import VectorDBFactory
 from integrations.llm import LLMFactory,LCOpenAI
+from integrations.redis_provider import RedisProvider
 from services.chains import ChainsService
 from services.chat import ChatService
 import os
@@ -27,6 +28,8 @@ async def lifespan(app: FastAPI):
   logger.info("Loading Whisper model")
   logger.info("Whisper model loaded successfully")
   
+  
+  
   # MongoDB client
   app.state.connection = AsyncIOMotorClient(settings.MONGODB_URL)
   app.state.db_client = app.state.connection[settings.MONGODB_DATABASE]
@@ -36,6 +39,9 @@ async def lifespan(app: FastAPI):
   app.state.embedding_client = llm_provider_factory.create(api_key="ss",provider=settings.EMBEDDING_BACKEND)
   app.state.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID, embedding_size=settings.EMBEDDING_MODEL_SIZE)
   
+  # redis
+  app.state.redis = RedisProvider()
+  await app.state.redis.connect()
   
   app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND,api_key=OPENAI_API_KEYS[1],api_url=settings.OPENAI_API_URL)
   app.state.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)

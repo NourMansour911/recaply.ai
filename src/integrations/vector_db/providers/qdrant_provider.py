@@ -388,7 +388,8 @@ class QdrantDBProvider(VectorDBInterface):
             raise VectorDBSearchError(
                 f"Vector search failed: {e}"
             ) from e
-
+    
+    
     async def search_by_keyword(
         self,
         collection_name: str,
@@ -397,7 +398,7 @@ class QdrantDBProvider(VectorDBInterface):
     ) -> List[Dict[str, Any]]:
         logger.info(f"[BM25] collection: {collection_name} ")
         try:
-            bm25 = self.bm25_map.get(collection_name)
+            bm25 = self._ensure_bm25(collection_name)
 
 
             if not bm25:
@@ -438,3 +439,43 @@ class QdrantDBProvider(VectorDBInterface):
             raise VectorDBSearchError(
                 f"Keyword search failed: {e}"
             ) from e
+            
+            
+    def _rebuild_bm25_from_collection(self, collection_name: str) -> bool:
+
+        logger.info(
+            f"[BM25] Rebuilding for '{collection_name}' "
+            f"from stored documents..."
+        )
+        all_texts = []
+        offset = None
+        while True:
+            points, next_offset = self.client.scroll(
+                collection_name=collection_name,
+                limit=100,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False
+            )
+            for p in points:
+                text = (p.payload or {}).get("text", "")
+                if text:
+                    all_texts.append(text)
+            if next_offset is None:
+                break
+            offset = next_offset
+
+        if not all_texts:
+            logger.warning("[BM25] No texts found to fit")
+            return False
+
+        self.fit_bm25(collection_name, all_texts)
+        return True
+
+    def _ensure_bm25(self, collection_name: str) -> Optional[BM25Encoder]:
+
+        bm25 = self.bm25_map.get(collection_name)
+        if not bm25:
+            if self._rebuild_bm25_from_collection(collection_name):
+                bm25 = self.bm25_map.get(collection_name)
+        return bm25

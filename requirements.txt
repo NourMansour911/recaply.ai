@@ -6,6 +6,7 @@ pydantic==2.12.5
 pydantic-settings==2.12.0
 aiofiles==24.1.0
 langchain==1.1.0
+langchain-community == 0.4.1
 motor==3.7.1
 openai==2.8.1
 qdrant-client==1.17.0
@@ -14,4 +15,5 @@ pysrt== 1.1.2
 webvtt-py== 0.5.1
 sentence-transformers== 5.2.0
 langsmith == 0.4.49
- spacy==3.8.14
+spacy==3.8.14
+redis==7.4.0

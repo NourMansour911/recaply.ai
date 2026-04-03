@@ -4,7 +4,7 @@ from integrations.llm import LLMInterface
 from integrations.vector_db import VectorDBInterface
 import asyncio
 from typing import List
-logger = get_logger(__name__)
+logger = get_logger(__name__,level="info")
 
 
 class Retrieval:
@@ -13,19 +13,26 @@ class Retrieval:
         self.vdb_client = vdb_client
     
         
-    async def retrieve_multi_query(self, queries: List[str], collection_name: str, top_k: int = 30):
+    async def retrieve_multi_query(self, queries: List[str], collection_name: str, top_k: int = 20):
         tasks = []
         
-        logger.info(f"Processing {len(queries)} queries...")
         for q in queries:
-            tasks.append(self._process_single_query(q, collection_name, top_k//len(queries)))
-
+            tasks.append(self._process_single_query(q, collection_name, (top_k//len(queries))))
+        logger.info(f"Retrieving {(top_k//len(queries))} queries")
         all_results = await asyncio.gather(*tasks)
+        unique_docs_per_query = []
+        seen_ids = set()
 
+        for result_list in all_results:
+            for doc in result_list:
+                if doc["id"] not in seen_ids:
+                    seen_ids.add(doc["id"])
+                    unique_docs_per_query.append(doc)
 
-        return all_results
+        return unique_docs_per_query
     
     async def _process_single_query(self,query, collection_name,top_k):
+        logger.info(f"{top_k} results for query: {query}")
         emb = await self.embedding_client.embed_text(query)
 
         semantic_task = asyncio.to_thread(self.vdb_client.search_by_vector, collection_name, emb, top_k)
@@ -58,15 +65,15 @@ class Retrieval:
 
                 if doc_id not in fused_scores:
                     fused_scores[doc_id] = {
-                        "score": 0,
+                        "rrf_score": 0,
                         "doc": item
                     }
 
-                fused_scores[doc_id]["score"] += score
+                fused_scores[doc_id]["rrf_score"] += score
 
         reranked = sorted(
             fused_scores.values(),
-            key=lambda x: x["score"],
+            key=lambda x: x["rrf_score"],
             reverse=True
         )
 

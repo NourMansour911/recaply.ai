@@ -14,6 +14,9 @@ services:
       - backend
     
     restart: always
+
+
+
   qdrant:
     image: qdrant/qdrant:v1.17
 
@@ -31,9 +34,31 @@ services:
     
     restart: always
 
+
+  redis:
+    
+    image: redis:7.4
+    
+    container_name: chat-redis
+    
+    ports:
+      - "6379:6379"
+    
+    volumes:
+      - redis-data:/data
+    
+    command: ["redis-server", "--appendonly", "yes"]
+
+    networks:
+      - backend
+
+    restart: always
+
+
 networks:
   backend:
 
 volumes:
   mongodata:
   qdrant_data:
+  redis-data:
