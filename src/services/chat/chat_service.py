@@ -10,7 +10,7 @@ from integrations.llm import LLMInterface
 from .reranker import Reranker
 from .query_rewrite import build_requery_chain
 from langchain_core.runnables import RunnableLambda
-
+from .generation import build_generation_chain
 logger = logging.getLogger(__name__)
 
 class ChatService:
@@ -21,7 +21,8 @@ class ChatService:
         self.rerarker = Reranker(api_key=settings.COHERE_API_KEY)
         self.retrieval = Retrieval(embedding_client=embedding_client,vdb_client=vdb_client)
         self.llms: Dict[str, LCOpenAI] = {
-            "requeries": lc_openai_client.get_langchain_llm(model=settings.GENERATION_MODEL_ID,temperature=0.5),
+            "requery": lc_openai_client.get_langchain_llm(model=settings.GENERATION_MODEL_ID,temperature=0.5),
+            "generation": lc_openai_client.get_langchain_llm(model=settings.GENERATION_MODEL_ID,temperature=0.1),
         }
 
         self._pipeline = None  
@@ -38,10 +39,15 @@ class ChatService:
     @traceable(name="chat_pipeline")
     def _build_pipeline(self):
 
-        requery_chain = build_requery_chain(self.llms["requeries"])
+        requery_chain = build_requery_chain(self.llms["requery"])
         retrieving = self._build_retriever_runnable()
         reranking = self._build_reranker_runnable()
-        pipeline =  (RunnablePassthrough.assign(requeries= requery_chain)|retrieving|reranking)
+        generation_chain = build_generation_chain(self.llms["generation"])
+        pipeline =  (RunnablePassthrough.assign(requeries= requery_chain)
+                     |retrieving
+                     |reranking
+                     | RunnablePassthrough.assign(generation= generation_chain)
+                     )
         logger.info(f"Pipeline built {pipeline}")
         return pipeline
 

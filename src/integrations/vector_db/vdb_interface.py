@@ -85,7 +85,7 @@ class VectorDBInterface(ABC):
         self,
         collection_name: str,
         vector: List[float],
-        limit: int = 20
+        limit: int 
     ) -> List[Dict[str, Any]]:
         pass
 
@@ -94,6 +94,6 @@ class VectorDBInterface(ABC):
         self,
         collection_name: str,
         query_text: str,
-        limit: int = 20
+        limit: int 
     ) -> List[Dict[str, Any]]:
         pass

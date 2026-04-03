@@ -18,7 +18,6 @@ class Retrieval:
         
         for q in queries:
             tasks.append(self._process_single_query(q, collection_name, (top_k//len(queries))))
-        logger.info(f"Retrieving {(top_k//len(queries))} queries")
         all_results = await asyncio.gather(*tasks)
         unique_docs_per_query = []
         seen_ids = set()
@@ -32,7 +31,6 @@ class Retrieval:
         return unique_docs_per_query
     
     async def _process_single_query(self,query, collection_name,top_k):
-        logger.info(f"{top_k} results for query: {query}")
         emb = await self.embedding_client.embed_text(query)
 
         semantic_task = asyncio.to_thread(self.vdb_client.search_by_vector, collection_name, emb, top_k)

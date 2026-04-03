@@ -365,7 +365,7 @@ class QdrantDBProvider(VectorDBInterface):
         self,
         collection_name: str,
         vector: List[float],
-        limit: int = 20
+        limit: int 
     ) -> List[Dict[str, Any]]:
         try:
             results = self.client.query_points(
@@ -394,7 +394,7 @@ class QdrantDBProvider(VectorDBInterface):
         self,
         collection_name: str,
         query_text: str,
-        limit: int = 20
+        limit: int 
     ) -> List[Dict[str, Any]]:
         logger.info(f"[BM25] collection: {collection_name} ")
         try:
