@@ -9,7 +9,7 @@ from integrations.vector_db import VectorDBInterface
 from integrations.llm import LLMInterface
 from .reranker import Reranker
 from .query_rewrite import build_requery_chain
-
+from langchain_core.runnables import RunnableLambda
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +29,8 @@ class ChatService:
     async def run(self,message,vdb_collection_name,history):
         try:
             pipeline = self._get_pipeline()
-            result = await pipeline.ainvoke({"query": message,"history": history})
-            raw_retrieved = await self.retrieval.retrieve_multi_query(result["requeries"],collection_name=vdb_collection_name)
-            reranked = await self.rerarker.rerank(query=message,documents=raw_retrieved,top_k=self.settings.TOP_K_DOCS)
-            return {
-                "requeries": result["requeries"],
-                "raw_retrieved": raw_retrieved,
-                "reranked": reranked
-            }
+            result = await pipeline.ainvoke({"collection_name": vdb_collection_name,"query": message,"history": history})
+            return result
         except Exception:
             logger.exception("Generate pipeline failed")
             raise
@@ -45,9 +39,9 @@ class ChatService:
     def _build_pipeline(self):
 
         requery_chain = build_requery_chain(self.llms["requeries"])
-        pipeline =  RunnablePassthrough.assign(
-                requeries= requery_chain
-                )
+        retrieving = self._build_retriever_runnable()
+        reranking = self._build_reranker_runnable()
+        pipeline =  (RunnablePassthrough.assign(requeries= requery_chain)|retrieving|reranking)
         logger.info(f"Pipeline built {pipeline}")
         return pipeline
 
@@ -55,3 +49,40 @@ class ChatService:
         if self._pipeline is None:
             self._pipeline = self._build_pipeline()
         return self._pipeline
+    
+    from langchain_core.runnables import RunnableLambda
+
+    def _build_retriever_runnable(self):
+        async def retrieve_fn(inputs):
+            requeries = inputs["requeries"]
+            collection = inputs["collection_name"]
+
+            docs = await self.retrieval.retrieve_multi_query(
+                requeries,
+                collection_name=collection
+            )
+
+            return {
+                **inputs,
+                "retrieved_docs": docs
+            }
+
+        return RunnableLambda(retrieve_fn)
+    
+    def _build_reranker_runnable(self):
+        async def rerank_fn(inputs):
+            query = inputs["query"]
+            docs = inputs["retrieved_docs"]
+
+            reranked = await self.rerarker.rerank(
+                query=query,
+                documents=docs,
+                top_k=self.settings.TOP_K_DOCS
+            )
+
+            return {
+                **inputs,
+                "reranked_docs": reranked
+            }
+
+        return RunnableLambda(rerank_fn)

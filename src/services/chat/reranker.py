@@ -36,19 +36,21 @@ class Reranker:
                 documents=texts,
                 top_n=min(top_k, len(documents))
             )
-
+            
             reranked_docs = []
             for item in response.results:
                 idx = item.index
-                score = item.relevance_score
-
-
                 doc = doc_map[idx].copy()
-                doc["rerank_score"] = score
 
-                doc["snippet"] = doc["text"][:200]
-
-                reranked_docs.append(doc)
+                filtered_doc = {
+                    "text": doc["text"],
+                    "metadata": {
+                        "file_id": doc["metadata"].get("file_id"),
+                        "start": doc["metadata"].get("start"),
+                        "end": doc["metadata"].get("end")
+                    }
+                }
+                reranked_docs.append(filtered_doc)
 
             return reranked_docs
 
