@@ -12,7 +12,7 @@ from integrations.llm import LLMInterface
 from models.file_model import Segment
 from schemas import UploadFilesResponse
 from typing import List
-
+from uuid import uuid4
 logger = get_logger(__name__)
 
 
@@ -137,7 +137,7 @@ class UploadOrchestrator:
             total_chunks += len(texts)
             total_files += 1
         
-        project_record_ids = list(range(total_chunks))
+        project_record_ids = list(uuid4() for _ in range(total_chunks))
         self.vdb_client.fit_bm25(collection_name=vectorDB_collection_name,texts=project_texts)
         chunks_stored = await self.vdb_client.store_batch(collection_name=vectorDB_collection_name,batch_size=250,texts=project_texts, vectors=project_vectors,record_ids=project_record_ids,metadatas=project_metadatas)
         
