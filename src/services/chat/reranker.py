@@ -47,7 +47,8 @@ class Reranker:
                     "metadata": {
                         "file_id": doc["metadata"].get("file_id"),
                         "start": doc["metadata"].get("start"),
-                        "end": doc["metadata"].get("end")
+                        "end": doc["metadata"].get("end"),
+                        "speakers": doc["metadata"].get("speakers", []),
                     }
                 }
                 reranked_docs.append(filtered_doc)

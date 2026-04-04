@@ -8,7 +8,7 @@ from core import Settings
 from integrations.llm import LLMInterface
 from datetime import datetime
 from typing import List
-
+from uuid import uuid4
 
 logger = get_logger(__name__)
 
@@ -47,7 +47,7 @@ class ChunkingService:
 
             return await self.embed(
                 chunks=chunks,
-                file_id=str(file_model.iid),
+                file_uname=str(file_model.file_unique_name),
                 idx=idx
             )
         except Exception as e:
@@ -57,7 +57,7 @@ class ChunkingService:
     async def embed(
         self,
         chunks: List[Segment],
-        file_id: str,
+        file_uname: str,
         idx: int
     ):
         texts, vectors, ids, metas = [], [], [], []
@@ -72,7 +72,7 @@ class ChunkingService:
             metadata = ChunkMetadata(
                 speakers=chunk.speakers or [],
                 word_count=len(chunk.text.split()),
-                file_id=file_id,
+                file_id=file_uname,
                 chunk_order=idx + i+1,
                 created_at=datetime.now().isoformat(),
                 start=chunk.start,
@@ -81,7 +81,7 @@ class ChunkingService:
 
             texts.append(chunk.text)
             vectors.append(emb)
-            ids.append(list(range(idx, idx + len(chunks))))
+            ids.append(list(uuid4() for _ in range(idx, idx + len(chunks))))
             metas.append(metadata)
 
         return texts, vectors, ids, metas
