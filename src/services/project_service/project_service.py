@@ -3,6 +3,7 @@ from repos.project_repo import ProjectRepo
 from integrations.vector_db import VectorDBInterface
 from schemas.project_schemas import DeleteProjectResponse, DeleteTenantResponse
 from helpers import get_project_path, get_tenant_path, get_logger
+from integrations.redis_provider import RedisProvider
 import shutil
 import os
 
@@ -20,11 +21,11 @@ logger = get_logger("project_service")
 
 class ProjectService:
 
-    def __init__(self, project_repo: ProjectRepo, file_repo: FileRepo, vdb_client: VectorDBInterface):
+    def __init__(self, project_repo: ProjectRepo, file_repo: FileRepo, vdb_client: VectorDBInterface,redis_provider: RedisProvider):
         self.project_repo = project_repo
         self.file_repo = file_repo
         self.vdb_client = vdb_client
-
+        self.redis_provider = redis_provider
     async def delete_project(self, project_id: str, tenant_id: str) -> DeleteProjectResponse:
         
         
@@ -60,6 +61,13 @@ class ProjectService:
         except Exception as e:
             raise ProjectServiceException(
                 details={"project_iid": project_iid, "error": str(e)}
+            ) from e
+            
+        try:
+            await self.redis_provider.clear_project_collections(tenant_id, project_id)
+        except Exception as e:
+            raise ProjectServiceException(
+                details={"project_id": project_id, "error": str(e)}
             ) from e
 
         return DeleteProjectResponse(
@@ -111,6 +119,13 @@ class ProjectService:
 
             try:
                 await self.project_repo.delete_projects_by_tenant(tenant_id)
+            except Exception as e:
+                raise ProjectServiceException(
+                    details={"tenant_id": tenant_id, "error": str(e)}
+                ) from e
+                
+            try:
+                await self.redis_provider.clear_tenant_collections(tenant_id)
             except Exception as e:
                 raise ProjectServiceException(
                     details={"tenant_id": tenant_id, "error": str(e)}

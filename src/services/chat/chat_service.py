@@ -1,41 +1,94 @@
 import logging
-from typing import List, Dict
+from typing import Dict
+
 from core import Settings
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langsmith import traceable
-from integrations.llm import LCOpenAI
-from .retrieval import Retrieval
+
+from integrations.llm import LCOpenAI, LLMInterface
 from integrations.vector_db import VectorDBInterface
-from integrations.llm import LLMInterface
+
+from .retrieval import Retrieval
 from .reranker import Reranker
 from .query_rewrite import build_requery_chain
-from langchain_core.runnables import RunnableLambda
 from .generation import build_generation_chain
+from .memory import MemoryService
+from integrations.redis_provider import RedisProvider
 logger = logging.getLogger(__name__)
+
 
 class ChatService:
 
-    def __init__(self,embedding_client:LLMInterface ,vdb_client: VectorDBInterface,lc_openai_client: LCOpenAI, settings: Settings):
+    def __init__(
+        self,
+        embedding_client: LLMInterface,
+        vdb_client: VectorDBInterface,
+        lc_openai_client: LCOpenAI,
+        settings: Settings,
+        redis_provider: RedisProvider,
+        ):
         self.llm_factory = lc_openai_client
         self.settings = settings
+        self.memory = MemoryService(redis_provider)
+
         self.rerarker = Reranker(api_key=settings.COHERE_API_KEY)
-        self.retrieval = Retrieval(embedding_client=embedding_client,vdb_client=vdb_client)
+        self.retrieval = Retrieval(
+            embedding_client=embedding_client,
+            vdb_client=vdb_client
+        )
+
         self.llms: Dict[str, LCOpenAI] = {
-            "requery": lc_openai_client.get_langchain_llm(model=settings.GENERATION_MODEL_ID,temperature=0.5),
-            "generation": lc_openai_client.get_langchain_llm(model=settings.GENERATION_MODEL_ID,temperature=0.1),
+            "requery": lc_openai_client.get_langchain_llm(
+                model=settings.GENERATION_MODEL_ID,
+                temperature=0.5
+            ),
+            "generation": lc_openai_client.get_langchain_llm(
+                model=settings.GENERATION_MODEL_ID,
+                temperature=0.1
+            ),
         }
 
-        self._pipeline = None  
+        self._pipeline = None
 
-    async def run(self,message,vdb_collection_name,history):
+    async def run(
+        self,
+        message,
+        vdb_collection_name,
+        tenant_id,
+        project_id,
+        user_id,
+        session_id
+    ):
         try:
+            history = await self.memory.get_history(
+                tenant_id,
+                project_id,
+                user_id,
+                session_id
+            )
+
             pipeline = self._get_pipeline()
-            result = await pipeline.ainvoke({"collection_name": vdb_collection_name,"query": message,"history": history})
+
+            result = await pipeline.ainvoke({
+                "collection_name": vdb_collection_name,
+                "query": message,
+                "history": self._trim_history(history, 3),
+            })
+
+            await self.memory.append_user_message(
+                tenant_id, project_id, user_id, session_id, message
+            )
+
+            await self.memory.append_ai_message(
+                tenant_id, project_id, user_id, session_id, result["generation"]["answer"]
+            )
+
             return result
+
         except Exception:
             logger.exception("Generate pipeline failed")
             raise
-    
+
     @traceable(name="chat_pipeline")
     def _build_pipeline(self):
 
@@ -43,11 +96,14 @@ class ChatService:
         retrieving = self._build_retriever_runnable()
         reranking = self._build_reranker_runnable()
         generation_chain = build_generation_chain(self.llms["generation"])
-        pipeline =  (RunnablePassthrough.assign(requeries= requery_chain)
-                     |retrieving
-                     |reranking
-                     | RunnablePassthrough.assign(generation= generation_chain)
-                     )
+
+        pipeline = (
+            RunnablePassthrough.assign(requeries=requery_chain)
+            | retrieving
+            | reranking
+            | RunnablePassthrough.assign(generation=generation_chain)
+        )
+
         logger.info(f"Pipeline built {pipeline}")
         return pipeline
 
@@ -55,17 +111,12 @@ class ChatService:
         if self._pipeline is None:
             self._pipeline = self._build_pipeline()
         return self._pipeline
-    
-    from langchain_core.runnables import RunnableLambda
 
     def _build_retriever_runnable(self):
         async def retrieve_fn(inputs):
-            requeries = inputs["requeries"]
-            collection = inputs["collection_name"]
-
             docs = await self.retrieval.retrieve_multi_query(
-                requeries,
-                collection_name=collection
+                inputs["requeries"],
+                collection_name=inputs["collection_name"]
             )
 
             return {
@@ -74,15 +125,12 @@ class ChatService:
             }
 
         return RunnableLambda(retrieve_fn)
-    
+
     def _build_reranker_runnable(self):
         async def rerank_fn(inputs):
-            query = inputs["query"]
-            docs = inputs["retrieved_docs"]
-
             reranked = await self.rerarker.rerank(
-                query=query,
-                documents=docs,
+                query=inputs["query"],
+                documents=inputs["retrieved_docs"],
                 top_k=self.settings.TOP_K_DOCS
             )
 
@@ -92,3 +140,9 @@ class ChatService:
             }
 
         return RunnableLambda(rerank_fn)
+    
+    def _trim_history(self, history, max_size):
+        if len(history) > max_size:
+            history = history[-max_size:]
+
+        return history

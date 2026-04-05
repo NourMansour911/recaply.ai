@@ -1,19 +1,18 @@
 from helpers.logger import get_logger
-import logging
-from schemas.vectordb_schema import SearchRequest,CollectionChunksResponse, ChunkResponse
+from schemas.vectordb_schema import CollectionChunksResponse, ChunkResponse
 from integrations.vector_db import VectorDBInterface
-from integrations.llm import LLMInterface, DocumentTypeEnum
+from integrations.llm import LLMInterface
 from typing import Optional
-from helpers.enums import Signals
 import json
 from models import ChunkMetadata
 
 
 from .vdb_exceptions import (
     VectorDBException,
-    VectorizationError
+
 )
 from ..service_exceptions import ProcessingError
+
 
 logger = get_logger("vectordb_service")
 
@@ -25,10 +24,12 @@ class VDBService:
         vdb_client: VectorDBInterface,
         generation_client: LLMInterface,
         embedding_client: LLMInterface,
+        
     ):
         self.vdb_client = vdb_client
         self.generation_client = generation_client
         self.embedding_client = embedding_client
+        
 
         logger.info("Vector DB Push Service initialized")
 
@@ -110,49 +111,4 @@ class VDBService:
             logger.error("Failed to get chunks", extra=details)
             raise ProcessingError(details=details)
 
-    async def vdb_search(self, project_id: str, tenant_id: str, request_schema: SearchRequest):
-
-        try:
-            collection_name = self.vdb_client.create_collection_name(project_id, tenant_id)
-
-            vector = self.embedding_client.embed_text(
-                text=request_schema.query,
-                document_type=DocumentTypeEnum.QUERY.value
-            )
-
-            if vector is None or len(vector) == 0:
-                details = {
-                    "error": Signals.QUERY_VECTORIZE_FAILED.value,
-                    "type": "VectorizationError",
-                    "context": {
-                        "query": request_schema.query,
-                        "project_id": project_id,
-                        "tenant_id": tenant_id
-                    }
-                }
-                logger.error("Vectorization failed", extra=details)
-                raise VectorizationError(details=details)
-
-            search_results = self.vdb_client.search_by_vector(
-                collection_name=collection_name,
-                vector=vector.tolist(),
-                limit=request_schema.limit
-            )
-
-            return search_results
-
-        except VectorizationError:
-            raise
-
-        except Exception as e:
-            details = {
-                "error": str(e),
-                "type": type(e).__name__,
-                "context": {
-                    "project_id": project_id,
-                    "tenant_id": tenant_id,
-                    "query": request_schema.query
-                }
-            }
-            logger.error("Vector DB search failed", extra=details)
-            raise VectorDBException(details=details)
+    

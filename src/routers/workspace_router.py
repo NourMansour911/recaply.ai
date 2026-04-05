@@ -28,10 +28,10 @@ async def get_chains(project_id: str,tenant_id: str = Depends(get_tenant_id)
     return await orchestrator.execute(tenant_id=tenant_id,project_id=project_id)
 
 
-@workspace_route.post("/chat",description="Chat with a specific project files")
-async def chat(chat_request: ChatRequest,project_id: str,tenant_id: str = Depends(get_tenant_id)
+@workspace_route.post("/chat/{session_id}/{user_id}",description="Chat with a specific project files")
+async def chat(chat_request: ChatRequest,session_id: str,user_id: str,project_id: str,tenant_id: str = Depends(get_tenant_id)
                        ,orchestrator: ChatOrchestrator = Depends(get_chat_orchestrator)):
-    return await orchestrator.execute(chat_request=chat_request,tenant_id=tenant_id,project_id=project_id)
+    return await orchestrator.execute(user_id=user_id,chat_request=chat_request,tenant_id=tenant_id,project_id=project_id,session_id=session_id)
     
 
 

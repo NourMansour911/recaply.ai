@@ -26,6 +26,8 @@ class ChatOrchestrator:
         chat_request: ChatRequest,
         project_id: str,
         tenant_id: str,
+        session_id: str,
+        user_id: str
     ) :
 
 
@@ -56,11 +58,6 @@ class ChatOrchestrator:
         logger.info(f"Starting chat flow{chat_request.message}")
         
 
-        response = await self.chat_service.run(history=test_history,message=chat_request.message,vdb_collection_name=project.vdb_collection_name)
+        response = await self.chat_service.run(user_id=user_id,project_id=project_id,tenant_id=tenant_id,session_id=session_id,message=chat_request.message,vdb_collection_name=project.vdb_collection_name)
 
         return response
-
-test_history = """The Real Reaction Remote Control Design Meeting aimed to design a new remote control 
-that is original, trendy, and user-friendly. Participants from marketing, industrial design, and UI design 
-discussed project scope, features, cost constraints, and user preferences, leading
-to key decisions on design elements and assigned tasks for research, prototyping, and implementation."""

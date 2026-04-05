@@ -24,3 +24,6 @@ def get_chains(request: Request):
 def get_chat(request: Request):
     return request.app.state.chat
 
+def get_redis(request: Request):
+    return request.app.state.redis
+

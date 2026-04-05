@@ -2,6 +2,7 @@ import redis.asyncio as redis
 from typing import Optional, List, Dict, Any
 import hashlib
 from helpers.logger import get_logger
+import json
 
 logger = get_logger(__name__)
 
@@ -111,18 +112,12 @@ class RedisProvider:
     ) -> str:
         return f"tenant:{tenant_id}:project:{project_id}:user:{user_id}:session:{session_id}"
 
-    async def append_message(
-        self,
-        key: str,
-        message: str
-    ) -> None:
-        await self.push(key, message)
+    async def append_message(self, key: str, message: Dict):
+        await self.push(key, json.dumps(message))
 
-    async def get_messages(
-        self,
-        key: str
-    ) -> List[str]:
-        return await self.get_list(key)
+    async def get_messages(self, key: str) -> List[Dict]:
+        data = await self.get_list(key)
+        return [json.loads(x) for x in data]
 
 
 
@@ -145,3 +140,43 @@ class RedisProvider:
         ttl: int = 300
     ) -> None:
         await self.set(key, value, ttl=ttl)
+        
+    async def list_collections(self) -> List[str]:
+
+        pattern = "tenant:*:project:*"
+        keys = await self.client.keys(pattern)
+
+        collections = set()
+        for k in keys:
+            parts = k.split(":")
+            if len(parts) >= 4:
+                collections.add(f"{parts[0]}:{parts[1]}:{parts[2]}:{parts[3]}")
+        return list(collections)
+
+    async def clear_all_collections(self) -> None:
+
+        keys = await self.client.keys("*")
+        if keys:
+            await self.client.delete(*keys)
+            logger.info(f"Deleted {len(keys)} keys from Redis")
+            
+    async def clear_tenant_collections(self, tenant_id: str) -> None:
+        pattern = f"tenant:{tenant_id}:*"
+        keys = await self.client.keys(pattern)
+        if keys:
+            await self.client.delete(*keys)
+            logger.info(f"Deleted {len(keys)} keys for tenant {tenant_id}")
+
+    async def clear_project_collections(self, tenant_id: str, project_id: str) -> None:
+        pattern = f"tenant:{tenant_id}:project:{project_id}:*"
+        keys = await self.client.keys(pattern)
+        if keys:
+            await self.client.delete(*keys)
+            logger.info(f"Deleted {len(keys)} keys for project {project_id} under tenant {tenant_id}")
+
+    async def clear_user_sessions(self, tenant_id: str, project_id: str, user_id: str) -> None:
+        pattern = f"tenant:{tenant_id}:project:{project_id}:user:{user_id}:*"
+        keys = await self.client.keys(pattern)
+        if keys:
+            await self.client.delete(*keys)
+            logger.info(f"Deleted {len(keys)} keys for user {user_id} in project {project_id} under tenant {tenant_id}")

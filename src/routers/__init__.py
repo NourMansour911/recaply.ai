@@ -8,9 +8,8 @@ from . import projects_router
 from .projects_router import delete_project
 from .projects_router import delete_tenant
 from . import vectordb_router
-from .vectordb_router import vdb_info
-from .vectordb_router import vdb_info
-from .vectordb_router import vdb_push
+from .vectordb_router import vdb_get_chunks
+from .vectordb_router import vdb_get_chunks
 from . import workspace_router
 from .workspace_router import chat
 from .workspace_router import get_chains
@@ -29,7 +28,6 @@ __all__ = [
     "list_project_files",
     "upload_files",
     "upload_files",
-    "vdb_info",
-    "vdb_info",
-    "vdb_push",
+    "vdb_get_chunks",
+    "vdb_get_chunks",
 ]

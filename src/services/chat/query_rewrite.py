@@ -1,11 +1,12 @@
 import logging
 from typing import Dict, Any, List
 
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableLambda, Runnable
 from langchain_core.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field
+from .utils import to_lc_messages
 
+from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
@@ -16,9 +17,9 @@ class MultiQueryOutput(BaseModel):
 
 
 MULTI_QUERY_PROMPT = ChatPromptTemplate.from_messages([
-        (
-            "system",
-            """
+    (
+        "system",
+        """
 You are a query rewriting assistant for a RAG system.
 
 Your job:
@@ -34,35 +35,34 @@ Rules:
 - Output MUST be valid JSON:
 {format_instructions}
 """
-        ),
-        (
-            "human",
-            """
-Chat History:
-{history}
+    ),
+    MessagesPlaceholder(variable_name="history"),
 
+    (
+        "human",
+        """
 User Query:
 {query}
 
 Generate exactly 2 optimized search queries.
 """
-        )
-    ])
+    )
+])
 
 
 parser = PydanticOutputParser(pydantic_object=MultiQueryOutput)
+
+
 def build_requery_chain(llm: ChatOpenAI) -> Runnable:
 
-
-    
     def prepare_input(inputs: Dict[str, Any]) -> Dict[str, Any]:
+        history = inputs.get("history", [])
+
         return {
             "query": inputs["query"],
-            "history": inputs.get("history", ""),
+            "history": to_lc_messages(history), 
             "format_instructions": parser.get_format_instructions()
         }
-
-
 
     chain = (
         RunnableLambda(prepare_input)

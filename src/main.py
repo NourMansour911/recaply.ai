@@ -25,46 +25,54 @@ logger = get_logger(__name__,level="debug")
 async def lifespan(app: FastAPI):
   # Exception handler
   app.add_exception_handler(AppException, app_exception_handler)
-  logger.info("Loading Whisper model")
-  logger.info("Whisper model loaded successfully")
   
   
   
   # MongoDB client
-  app.state.connection = AsyncIOMotorClient(settings.MONGODB_URL)
-  app.state.db_client = app.state.connection[settings.MONGODB_DATABASE]
+  app.state.db_connection = AsyncIOMotorClient(settings.MONGODB_URL)
+  app.state.db_client = app.state.db_connection[settings.MONGODB_DATABASE]
+  logger.info("MongoDB client loaded successfully")
   
-  # LLM clients
-  llm_provider_factory = LLMFactory()
-  app.state.embedding_client = llm_provider_factory.create(api_key="ss",provider=settings.EMBEDDING_BACKEND)
-  app.state.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID, embedding_size=settings.EMBEDDING_MODEL_SIZE)
-  
-  # redis
-  app.state.redis = RedisProvider()
-  await app.state.redis.connect()
-  
-  app.state.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND,api_key=OPENAI_API_KEYS[1],api_url=settings.OPENAI_API_URL)
-  app.state.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
-  
-  logger.info("LangChain client loaded successfully")
-
+  # VectorDB client
   vdb_provider_factory = VectorDBFactory(settings)
   app.state.vdb_client = vdb_provider_factory.create(provider=settings.VECTOR_DB_BACKEND)
   app.state.vdb_client.connect()
   collections = app.state.vdb_client.list_all_collections()
+  logger.info(f"VectorDB client loaded successfully")
+  logger.info(f"VectorDB Collections: {collections}")
 
-  logger.info(f"vdb collections {collections}")
+
+  # LLM clients
+  llm_provider_factory = LLMFactory()
+  app.state.embedding_client = llm_provider_factory.create(api_key="hf",provider=settings.EMBEDDING_BACKEND)
+  app.state.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID, embedding_size=settings.EMBEDDING_MODEL_SIZE)
+  logger.info("Embedding client loaded successfully")
+  
+  # Redis client
+  app.state.redis = RedisProvider()
+  await app.state.redis.connect()
+  redis_collections = await app.state.redis.list_collections()
+  logger.info("Redis Collections: " + str(redis_collections))
+  logger.info("Redis client loaded successfully")
+  
+  
+
 
   app.state.langchain_client = LCOpenAI(api_key=OPENAI_API_KEYS[3],api_url=settings.OPENAI_API_URL)
   app.state.chains = ChainsService(app.state.langchain_client,settings=settings)
-  app.state.chat = ChatService(embedding_client=app.state.embedding_client,lc_openai_client=app.state.langchain_client,vdb_client=app.state.vdb_client,settings=settings)
+  app.state.chat = ChatService(redis_provider=app.state.redis ,embedding_client=app.state.embedding_client,lc_openai_client=app.state.langchain_client,vdb_client=app.state.vdb_client,settings=settings)
+  logger.info("LangChain client loaded successfully")
   
 
   whisper_provider = get_whisper_provider()
   whisper_provider.load()
+  logger.info("Whisper model loaded successfully")
   
   
   yield
+  app.state.vdb_client.disconnect()
+  app.state.db_connection.close()
+  await app.state.redis.disconnect()
   
   
   
