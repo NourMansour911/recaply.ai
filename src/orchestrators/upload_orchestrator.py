@@ -10,7 +10,7 @@ from services.project_service import ProjectService
 from integrations.vector_db import VectorDBInterface
 from integrations.llm import LLMInterface
 from models.file_model import Segment
-from schemas import UploadFilesResponse
+from schemas import UploadFilesResponse, UploadedFileResponse
 from typing import List
 from uuid import uuid4
 logger = get_logger(__name__)
@@ -120,6 +120,7 @@ class UploadOrchestrator:
         
         
         normalized_files : List[FileModel] = []
+        uploaded_files : List[UploadedFileResponse] = []
         total_chunks = 0
         total_files = 0
         project_vectors = []
@@ -130,6 +131,13 @@ class UploadOrchestrator:
         for i,file in enumerate(files):
             file_model = await self._upload_normalize(file, project=project,file_order=i+1)
             normalized_files.append(file_model)
+            uploaded_files.append(
+                UploadedFileResponse(
+                    file_name=file_model.file_name,
+                    file_unique_name=file_model.file_unique_name,
+                    file_order=file_model.file_order,
+                )
+            )
             texts, vectors, _ ,metadatas = await self.chunking_service.process_file_chunks(file_model=file_model,idx=total_chunks )
             project_texts.extend(texts)
             project_vectors.extend(vectors)
@@ -146,7 +154,7 @@ class UploadOrchestrator:
                                     vectorDB_collection=vectorDB_collection_name,
                                     project_iid=str(project.iid),
                                     total_chunks=total_chunks,
-                                    files=normalized_files
+                                    files=uploaded_files
                                     )
 
         

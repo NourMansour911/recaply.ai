@@ -5,8 +5,6 @@ from .vector_db import VectorDBFactory
 def get_vdb_client(request: Request) -> VectorDBFactory:
     return request.app.state.vdb_client
 
-def get_generation_client(request: Request) -> LLMFactory:
-    return request.app.state.generation_client
 
 def get_embedding_client(request: Request) -> LLMFactory:
     return request.app.state.embedding_client

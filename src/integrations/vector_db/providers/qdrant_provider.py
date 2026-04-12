@@ -20,9 +20,9 @@ from .bm25 import BM25Encoder
 
 class QdrantDBProvider(VectorDBInterface):
 
-    def __init__(self,  distance_method: str, vector_size: int):
+    def __init__(self,url: str,distance_method: str, vector_size: int):
         self.client: Optional[QdrantClient] = None
-
+        self.url = url
         self.vector_size = vector_size
         self.distance_method = None
         if distance_method == "cosine":
@@ -36,7 +36,7 @@ class QdrantDBProvider(VectorDBInterface):
 
     def connect(self) -> None:
         try:
-            self.client = QdrantClient(host="localhost", port=6333)
+            self.client = QdrantClient(url=self.url)
             logger.info("[CONNECT SUCCESS]")
         except Exception as e:
             logger.error(f"Failed to connect to Qdrant: {e}")

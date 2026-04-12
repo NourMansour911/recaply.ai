@@ -9,6 +9,7 @@ from .main_dependencies import get_chains
 from .main_dependencies import get_chat
 from .main_dependencies import get_db_client
 from .main_dependencies import get_project_id
+from .main_dependencies import get_redis
 from .main_dependencies import get_tenant_id
 from . import settings
 from .settings import Settings
@@ -26,6 +27,7 @@ __all__ = [
     "get_chat",
     "get_db_client",
     "get_project_id",
+    "get_redis",
     "get_settings",
     "get_tenant_id",
 ]

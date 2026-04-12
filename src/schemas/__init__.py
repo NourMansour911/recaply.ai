@@ -7,6 +7,7 @@ from . import chat_schema
 from .chat_schema import ChatRequest
 from . import files_schemas
 from .files_schemas import UploadFilesResponse
+from .files_schemas import UploadedFileResponse
 from . import project_schemas
 from .project_schemas import DeleteProjectResponse
 from .project_schemas import DeleteTenantResponse
@@ -32,4 +33,5 @@ __all__ = [
     "EnrichedSegment",
     "SearchRequest",
     "UploadFilesResponse",
+    "UploadedFileResponse",
 ]

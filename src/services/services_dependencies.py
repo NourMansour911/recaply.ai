@@ -2,7 +2,7 @@ from fastapi import Depends
 
 from core.settings import Settings, get_settings
 from core.main_dependencies import get_redis
-from integrations import get_vdb_client, get_embedding_client, get_generation_client
+from integrations import get_vdb_client, get_embedding_client
 from integrations.llm import LLMInterface
 from integrations.vector_db import VectorDBInterface
 from integrations.redis_provider import RedisProvider
@@ -40,14 +40,12 @@ def get_chunking_service(
 
 def get_vdb_service(
     vdb_client: VectorDBInterface = Depends(get_vdb_client),
-    generation_client: LLMInterface = Depends(get_generation_client),
     embedding_client: LLMInterface = Depends(get_embedding_client),
     
 ):
     return VDBService(
 
         vdb_client=vdb_client,
-        generation_client=generation_client,
         embedding_client=embedding_client,
         
     )

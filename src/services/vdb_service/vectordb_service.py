@@ -22,12 +22,10 @@ class VDBService:
     def __init__(
         self,
         vdb_client: VectorDBInterface,
-        generation_client: LLMInterface,
         embedding_client: LLMInterface,
         
     ):
         self.vdb_client = vdb_client
-        self.generation_client = generation_client
         self.embedding_client = embedding_client
         
 

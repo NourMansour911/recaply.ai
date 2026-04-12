@@ -10,24 +10,18 @@ logger = get_logger(__name__)
 class RedisProvider:
     def __init__(
         self,
-        host: str = "localhost",
-        port: int = 6379,
-        password: Optional[str] = None,
+        url: str,
 
     ):
-        self.host = host
-        self.port = port
-        self.password = password
-
+        
+        self.url = url
         self.client: Optional[redis.Redis] = None
 
 
     async def connect(self) -> None:
         try:
-            self.client = redis.Redis(
-                host=self.host,
-                port=self.port,
-                password=self.password,
+            self.client = redis.Redis.from_url(
+                url=self.url,
                 decode_responses=True
             )
             logger.info("[REDIS CONNECT SUCCESS]")

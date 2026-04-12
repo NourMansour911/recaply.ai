@@ -7,7 +7,7 @@ from langsmith import traceable
 
 from integrations.llm import LCOpenAI, LLMInterface
 from integrations.vector_db import VectorDBInterface
-
+from services.service_exceptions import ServiceException
 from .retrieval import Retrieval
 from .reranker import Reranker
 from .query_rewrite import build_requery_chain
@@ -83,11 +83,11 @@ class ChatService:
                 tenant_id, project_id, user_id, session_id, result["generation"]["answer"]
             )
 
-            return result
+            return result["generation"]
 
-        except Exception:
+        except Exception as e:
             logger.exception("Generate pipeline failed")
-            raise
+            raise ServiceException(message="Generate response failed", details={"error": str(e)},)
 
     @traceable(name="chat_pipeline")
     def _build_pipeline(self):

@@ -4,6 +4,8 @@ from . import files_router
 from .files_router import delete_file
 from .files_router import list_project_files
 from .files_router import upload_files
+from . import home_router
+from .home_router import home
 from . import projects_router
 from .projects_router import delete_project
 from .projects_router import delete_tenant
@@ -17,6 +19,7 @@ from .workspace_router import upload_files
 
 __all__ = [
     "files_router",
+    "home_router",
     "projects_router",
     "vectordb_router",
     "workspace_router",
@@ -25,6 +28,7 @@ __all__ = [
     "delete_project",
     "delete_tenant",
     "get_chains",
+    "home",
     "list_project_files",
     "upload_files",
     "upload_files",
