@@ -12,14 +12,16 @@ logger = get_logger(__name__)
 
 projects_route = APIRouter(
     prefix="/api/v1/projects",
-    tags=["api_v1", "projects", "admin"],
+    tags=["Projects", "Admin"],
 )
 
 
 @projects_route.delete(
     "/{project_id}",
     response_model=DeleteProjectResponse,
-    description="Delete a project along with all related data"
+    summary="Delete project",
+    description="Deletes a project and all related files, vectors, and stored artifacts.",
+    response_description="Project deletion result."
 )
 async def delete_project(
     project_id: str,
@@ -35,7 +37,9 @@ async def delete_project(
 @projects_route.delete(
     "/all/tenant",
     response_model=DeleteTenantResponse,
-    description="Delete ALL data for a tenant (projects, files, vectors, etc.)"
+    summary="Delete tenant data",
+    description="Deletes all data for the tenant, including projects, files, and vector entries.",
+    response_description="Tenant deletion result."
 )
 async def delete_tenant(
     tenant_id: str = Depends(get_tenant_id),

@@ -2,7 +2,7 @@ import logging
 from typing import Dict
 
 from core import Settings
-from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langsmith import traceable
 
 from integrations.llm import LCOpenAI, LLMInterface
@@ -68,12 +68,29 @@ class ChatService:
             )
 
             pipeline = self._get_pipeline()
+            trimmed_history = self._trim_history(history, 3)
+
+            run_config = {
+                "run_name": "chat_run",
+                "tags": ["chat", "api", "rag"],
+                "metadata": {
+                    "tenant_id": tenant_id,
+                    "project_id": project_id,
+                    "user_id": user_id,
+                    "session_id": session_id,
+                    "vdb_collection_name": vdb_collection_name,
+                    "history_size": len(trimmed_history),
+                    "top_k_docs": self.settings.TOP_K_DOCS,
+                    "generation_model_id": self.settings.GENERATION_MODEL_ID,
+                    "query_length": len(message or ""),
+                },
+            }
 
             result = await pipeline.ainvoke({
                 "collection_name": vdb_collection_name,
                 "query": message,
-                "history": self._trim_history(history, 3),
-            })
+                "history": trimmed_history,
+            }, config=run_config)
 
             await self.memory.append_user_message(
                 tenant_id, project_id, user_id, session_id, message
@@ -89,7 +106,6 @@ class ChatService:
             logger.exception("Generate pipeline failed")
             raise ServiceException(message="Generate response failed", details={"error": str(e)},)
 
-    @traceable(name="chat_pipeline")
     def _build_pipeline(self):
 
         requery_chain = build_requery_chain(self.llms["requery"])

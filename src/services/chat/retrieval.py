@@ -4,7 +4,7 @@ from integrations.llm import LLMInterface
 from integrations.vector_db import VectorDBInterface
 import asyncio
 from typing import List
-logger = get_logger(__name__,level="info")
+logger = get_logger(__name__,level="error")
 
 
 class Retrieval:

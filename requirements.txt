@@ -7,6 +7,7 @@ pydantic-settings==2.12.0
 aiofiles==24.1.0
 langchain==1.1.0
 langchain-community==0.4.1
+langchain-openai==1.1.0
 motor==3.7.1
 openai==2.8.1
 qdrant-client==1.17.0
@@ -14,9 +15,12 @@ faster-whisper==1.2.1
 pysrt==1.1.2
 webvtt-py==0.5.1
 sentence-transformers==5.2.0
+scipy==1.16.2
+PyPDF2==3.0.1
 langsmith==0.4.49
 spacy==3.8.14
 redis==7.4.0
 prometheus-client==0.21.1
 starlette-exporter==0.23.0
 fastapi-health==0.4.0
+cohere==5.5.8

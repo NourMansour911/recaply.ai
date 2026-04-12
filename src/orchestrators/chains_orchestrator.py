@@ -26,6 +26,8 @@ class ChainsOrchestrator:
         self,
         project_id: str,
         tenant_id: str,
+        user_id: str,
+        session_id: str,
     ) -> ChainsResponse:
 
 
@@ -62,7 +64,13 @@ class ChainsOrchestrator:
         logger.info("Running generate pipeline", extra={"segments_count": len(segments)})
 
         try:
-            output: GenerateOutput = await self.chains_service.run(segments)
+            output: GenerateOutput = await self.chains_service.run(
+                segments=segments,
+                tenant_id=tenant_id,
+                project_id=project_id,
+                user_id=user_id,
+                session_id=session_id,
+            )
         except Exception as e:
             logger.error("ChainsService failed", exc_info=True)
             raise ProjectServiceException(details={"project_id": project_id, "error": str(e)}) from e

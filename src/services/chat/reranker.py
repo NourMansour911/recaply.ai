@@ -2,7 +2,7 @@ from typing import List, Dict, Any
 from helpers.logger import get_logger
 import cohere
 
-logger = get_logger(__name__, level="info")
+logger = get_logger(__name__)
 
 
 class Reranker:

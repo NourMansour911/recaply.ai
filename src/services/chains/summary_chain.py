@@ -11,11 +11,15 @@ summary_parser = PydanticOutputParser(pydantic_object=Summary)
 
 SUMMARY_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
-Summarize the meeting content.
+You produce a structured summary from context, decisions, tasks, conflicts, and risks.
 
-Rules:
-- Use context, decisions, tasks, conflicts, and risks
-- Output MUST be valid JSON
+Output rules:
+- Use only the provided structured inputs.
+- Do not introduce new facts.
+- Keep points concise and non-redundant.
+- Return JSON only, with no markdown or explanatory text.
+- The JSON must strictly follow this schema guidance:
+
 {format_instructions}
 """),
     ("human", """
@@ -34,7 +38,7 @@ Conflicts:
 Risks:
 {risks}
 
-Extract summary with:
+Return summary with fields:
 - overview
 - key_points
 - decisions_summary
@@ -54,4 +58,10 @@ def build_summary_chain(llm: LCOpenAI):
             "format_instructions": summary_parser.get_format_instructions()
         }
 
-    return RunnableLambda(prepare_input) | SUMMARY_PROMPT | llm | summary_parser 
+    def ensure_summary_dict(data):
+        """Normalize: if list of summaries, take first; if list of dicts, wrap in Summary dict."""
+        if isinstance(data, list):
+            return data[0] if data else {}
+        return data
+
+    return RunnableLambda(prepare_input) | SUMMARY_PROMPT | llm | RunnableLambda(ensure_summary_dict) | summary_parser 

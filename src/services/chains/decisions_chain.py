@@ -12,23 +12,26 @@ decision_parser = PydanticOutputParser(pydantic_object=DecisionsOutput)
 
 DECISION_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
-Extract decisions from meeting segments.
+You extract decisions from transcript segments.
 
-Rules:
-- Use ONLY provided segments and context
-- Do NOT hallucinate
-- Output MUST be valid JSON
+Output rules:
+- Use only provided segments and context.
+- Do not infer decisions that are not grounded in text.
+- Keep each decision atomic and non-duplicated.
+- If a field is unknown, set it to null.
+- Return JSON only, without markdown or prose.
+- The JSON must strictly follow this schema guidance:
 
 {format_instructions}
 """),
     ("human", """
-Segments:
+Transcript segments:
 {segments}
 
 Context:
 {context}
 
-Extract decisions with:
+Extract decisions with fields:
 - id
 - title
 - description
@@ -38,6 +41,8 @@ Extract decisions with:
 - pricing
 - confidence
 - segment_id
+
+Set segment_id to the best supporting segment id when available.
 """
     )
 ])
@@ -52,4 +57,10 @@ def build_decisions_chain(llm: LCOpenAI):
             "format_instructions": decision_parser.get_format_instructions()
         }
 
-    return RunnableLambda(prepare_input) | DECISION_PROMPT | llm | decision_parser | RunnableLambda(lambda x: x.decisions)
+    def ensure_decisions_dict(data):
+        """Normalize LLM output: wrap bare array in dict if needed."""
+        if isinstance(data, list):
+            return {"decisions": data}
+        return data
+
+    return RunnableLambda(prepare_input) | DECISION_PROMPT | llm | RunnableLambda(ensure_decisions_dict) | decision_parser | RunnableLambda(lambda x: x.decisions)

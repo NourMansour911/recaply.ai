@@ -12,15 +12,19 @@ sentiment_parser = PydanticOutputParser(pydantic_object=Sentiment)
 
 SENTIMENT_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
-Analyze overall sentiment from meeting segments.
+You analyze overall meeting sentiment from transcript segments.
 
-Rules:
-- Use ONLY provided segments
-- Output MUST be valid JSON
+Output rules:
+- Use only provided segments.
+- Keep labels grounded in evidence from transcript tone/content.
+- If uncertain, prefer neutral with lower confidence.
+- Return JSON only, no markdown and no commentary.
+- The JSON must strictly follow this schema guidance:
+
 {format_instructions}
 """),
     ("human", """
-Segments:
+Transcript segments:
 {segments}
 
 Extract sentiment with:
@@ -28,6 +32,8 @@ Extract sentiment with:
 - confidence
 - highlights
 - segment_ids
+
+segment_ids should reference segments that most influenced the sentiment.
 """
     )
 ])
@@ -40,4 +46,10 @@ def build_sentiment_chain(llm: LCOpenAI):
             "format_instructions": sentiment_parser.get_format_instructions()
         }
 
-    return RunnableLambda(prepare_input) | SENTIMENT_PROMPT | llm | sentiment_parser 
+    def ensure_sentiment(data):
+        """Normalize: if list of sentiments, take first; otherwise return as-is."""
+        if isinstance(data, list):
+            return data[0] if data else {}
+        return data
+
+    return RunnableLambda(prepare_input) | SENTIMENT_PROMPT | llm | RunnableLambda(ensure_sentiment) | sentiment_parser

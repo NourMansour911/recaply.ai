@@ -1,9 +1,10 @@
 import logging
-from typing import List, Dict
+from typing import Dict, List
+
 from core import Settings
-from langchain_core.runnables import RunnableAssign,RunnablePassthrough
-from langsmith import traceable
 from integrations.llm import LCOpenAI
+from langchain_core.runnables import RunnableAssign, RunnablePassthrough
+from langsmith import traceable
 from models import Segment
 from services.chains.chains_output_schemas import GenerateOutput
 
@@ -35,17 +36,35 @@ class ChainsService:
 
         self._pipeline = None  
 
-    async def run(self, segments: List[Segment]) -> GenerateOutput:
+    async def run(
+        self,
+        segments: List[Segment],
+        tenant_id: str,
+        project_id: str,
+        user_id: str,
+        session_id: str,
+    ) -> GenerateOutput:
         logger.info("Running generate pipeline", extra={"segments_count": len(segments)})
         try:
             pipeline = self._get_pipeline()
-            result = await pipeline.ainvoke({"segments": segments})
+            run_config = {
+                "run_name": "chains_run",
+                "tags": ["chains", "api", "pipeline"],
+                "metadata": {
+                    "tenant_id": tenant_id,
+                    "project_id": project_id,
+                    "user_id": user_id,
+                    "session_id": session_id,
+                    "segments_count": len(segments),
+                    "generation_model_id": self.settings.GENERATION_MODEL_ID,
+                },
+            }
+            result = await pipeline.ainvoke({"segments": segments}, config=run_config)
             return GenerateOutput(**result)
         except Exception:
             logger.exception("Generate pipeline failed")
             raise
     
-    @traceable(name="chains_pipeline")
     def _build_pipeline(self):
 
         # parallel: context + sentiment

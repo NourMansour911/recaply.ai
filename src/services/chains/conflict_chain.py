@@ -11,11 +11,16 @@ conflict_parser = PydanticOutputParser(pydantic_object=ConflictsOutput)
 
 CONFLICT_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
-Extract conflicts between tasks or decisions.
+You detect conflicts across provided tasks and decisions.
 
-Rules:
-- Use ONLY tasks and decisions
-- Output MUST be valid JSON
+Output rules:
+- Use only provided tasks and decisions.
+- Report only genuine contradictions/trade-offs/dependencies.
+- Do not emit duplicates.
+- If uncertain, omit the conflict rather than inventing one.
+- Return JSON only, without markdown or extra prose.
+- The JSON must strictly follow this schema guidance:
+
 {format_instructions}
 """),
     ("human", """
@@ -30,6 +35,8 @@ Extract conflicts with:
 - entity ('decision' or 'task')
 - related_ids
 - reason
+
+Keep reason short, explicit, and evidence-based.
 """
     )
 ])
@@ -44,4 +51,10 @@ def build_conflict_chain(llm: LCOpenAI):
             "format_instructions": conflict_parser.get_format_instructions()
         }
 
-    return RunnableLambda(prepare_input) | CONFLICT_PROMPT | llm | conflict_parser | RunnableLambda(lambda x: x.conflicts)
+    def ensure_conflicts_dict(data):
+        """Normalize LLM output: wrap bare array in dict if needed."""
+        if isinstance(data, list):
+            return {"conflicts": data}
+        return data
+
+    return RunnableLambda(prepare_input) | CONFLICT_PROMPT | llm | RunnableLambda(ensure_conflicts_dict) | conflict_parser | RunnableLambda(lambda x: x.conflicts)

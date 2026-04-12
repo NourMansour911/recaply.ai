@@ -73,7 +73,7 @@ async def lifespan(app: FastAPI):
   
 
 
-  app.state.langchain_client = LCOpenAI(api_key=OPENAI_API_KEYS[1],api_url=settings.OPENAI_API_URL)
+  app.state.langchain_client = LCOpenAI(api_key=OPENAI_API_KEYS[3],api_url=settings.OPENAI_API_URL)
   app.state.chains = ChainsService(app.state.langchain_client,settings=settings)
   app.state.chat = ChatService(redis_provider=app.state.redis ,embedding_client=app.state.embedding_client,lc_openai_client=app.state.langchain_client,vdb_client=app.state.vdb_client,settings=settings)
   logger.info("LangChain client loaded successfully")

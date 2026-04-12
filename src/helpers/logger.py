@@ -2,9 +2,11 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 
-
-
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
+BASE_STORAGE_PATH = os.getenv(
+    "STORAGE_PATH",
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), "storage"),
+)
+LOG_DIR = os.path.join(BASE_STORAGE_PATH, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "logs.log")
 

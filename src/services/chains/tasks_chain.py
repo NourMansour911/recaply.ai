@@ -12,15 +12,20 @@ task_parser = PydanticOutputParser(pydantic_object=TasksOutput)
 
 TASK_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
-Extract actionable tasks from meeting segments.
+You extract actionable tasks from transcript segments.
 
-Rules:
-- Use ONLY provided segments, context, and decisions
-- Output MUST be valid JSON
+Output rules:
+- Use only provided segments, context, and decisions.
+- Include only actionable items (not generic discussion points).
+- Avoid duplicates; merge equivalent tasks.
+- If a field is unknown, set it to null.
+- Return JSON only, with no markdown fences and no explanation.
+- The JSON must strictly follow this schema guidance:
+
 {format_instructions}
 """),
     ("human", """
-Segments:
+Transcript segments:
 {segments}
 
 Context:
@@ -42,6 +47,8 @@ Extract tasks with:
 - related_decision_ids
 - confidence
 - segment_id
+
+Use related_decision_ids only when a decision linkage is explicit or strongly implied.
 """
     )
 ])
@@ -58,4 +65,10 @@ def build_tasks_chain(llm: LCOpenAI):
             "format_instructions": task_parser.get_format_instructions()
         }
 
-    return RunnableLambda(prepare_input) | TASK_PROMPT | llm | task_parser | RunnableLambda(lambda x: x.tasks)
+    def ensure_tasks_dict(data):
+        """Normalize LLM output: wrap bare array in dict if needed."""
+        if isinstance(data, list):
+            return {"tasks": data}
+        return data
+
+    return RunnableLambda(prepare_input) | TASK_PROMPT | llm | RunnableLambda(ensure_tasks_dict) | task_parser | RunnableLambda(lambda x: x.tasks)

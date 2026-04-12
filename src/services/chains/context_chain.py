@@ -14,12 +14,14 @@ CONTEXT_PROMPT = ChatPromptTemplate.from_messages([
     (
         "system",
         """
-You are an AI assistant that extracts structured meeting context.
+You extract structured meeting context from transcript segments.
 
-Rules:
-- Use ONLY provided segments
-- Do NOT hallucinate
-- Output MUST be valid JSON
+Output rules:
+- Use only the provided segments.
+- Do not invent participants, agenda items, or goals.
+- If a value is missing, leave it null or an empty list according to schema.
+- Return JSON only, with no markdown fences and no extra commentary.
+- The JSON must strictly follow this schema guidance:
 
 {format_instructions}
 """
@@ -27,14 +29,14 @@ Rules:
     (
         "human",
         """
-Segments:
+Transcript segments:
 {segments}
 
 Extract:
-- title or generate one that fit the context
-- participants (name, role if available)
-- agenda (list)
-- key purpose
+- title (if not explicit, infer a short neutral title from content)
+- participants (name and role only when evidenced)
+- agenda (concise list of discussed topics)
+- key_purpose (single concise statement)
 """
     )
 ])
@@ -47,5 +49,11 @@ def build_context_chain(llm: LCOpenAI):
             "format_instructions": context_parser.get_format_instructions()
         }
 
-    chain = RunnableLambda(prepare_input) | CONTEXT_PROMPT | llm | context_parser 
+    def ensure_context_dict(data):
+        """Normalize: if list of contexts, take first; otherwise return as-is."""
+        if isinstance(data, list):
+            return data[0] if data else {}
+        return data
+
+    chain = RunnableLambda(prepare_input) | CONTEXT_PROMPT | llm | RunnableLambda(ensure_context_dict) | context_parser
     return chain
