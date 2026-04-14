@@ -15,7 +15,7 @@ Built with clean architecture, dependency injection, custom provider abstraction
 | **Key Innovation** | Citation system links every AI answer/insight back to exact meeting segment with timestamps |
 | **Architecture** | Layered FastAPI with dependency injection, custom providers, singleton patterns |
 | **AI Pipeline** | Query rewriting + multi-method retrieval + reranking + citation-aware generation |
-| **Deployment** | Docker containerized, GitHub Actions CI/CD, test-gated pipeline, production-ready |
+| **Continuous Delivery** | Docker containerized, GitHub Actions CI/CD, test-gated pipeline, artifact-based image promotion |
 
 Docker Hub Repository: [https://hub.docker.com/r/nourmansour41/recaply](https://hub.docker.com/r/nourmansour41/recaply)
 ---
@@ -220,6 +220,8 @@ Tests include:
 - Workspace chat and chains endpoints
 - File upload with real multipart requests using transcript.txt
 
+Test setup is handled in [tests/conftest.py](tests/conftest.py), which provides the required import path and environment values before the app is imported.
+
 For test details, see [.github/README.md](.github/README.md).
 
 ### Code Structure
@@ -227,35 +229,34 @@ For test details, see [.github/README.md](.github/README.md).
 - `src/` → Backend code (see [src/README.md](src/README.md))
 - `tests/` → API test suite
 - `docker/` → Containerization and compose stack (see [docker/README.md](docker/README.md))
-- `.github/workflows/` → CI/CD pipeline (see [.github/README.md](.github/README.md))
+- `.github/workflows/` → separate CI and CD workflows (see [.github/README.md](.github/README.md))
 
 ---
 
-## Part VII: Deployment & Operations
+## Part VII: Continuous Delivery & Operations
 
 ### Docker Containerization
 
 The API is containerized with all system dependencies (Python 3.11, FFmpeg, system libs for text/media processing).
 
-**Build the image:**
-
-```bash
-docker build -f docker/api/Dockerfile -t recaply:local .
-```
-
 For local development with full stack (MongoDB, Qdrant, Redis, Prometheus, Grafana), see [docker/README.md](docker/README.md).
 
 ### CI/CD Pipeline
 
-On every push to `main`:
+The repository now uses two workflows:
 
-1. Checkout code
-2. Set up Python 3.11
-3. Install dependencies
-4. **Run tests** (fail-fast gate)
-5. Build Docker image
-6. Tag with commit SHA and `latest`
-7. Push to Docker Hub
+1. [ci.yml](.github/workflows/ci.yml)
+    - runs on push, pull request, and manual dispatch
+    - installs dependencies
+    - runs Ruff linting and pytest
+    - on `main`, builds the Docker image and uploads it as an artifact
+
+2. [cd.yml](.github/workflows/cd.yml)
+    - runs after CI succeeds on `main`
+    - downloads the image artifact from CI
+    - loads the image locally
+    - logs in to Docker Hub
+    - tags and pushes the image
 
 **Setup required:**
 - GitHub Secrets: `DOCKER_USERNAME`, `DOCKER_PASSWORD` (Docker Hub access token)
