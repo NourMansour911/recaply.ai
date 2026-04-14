@@ -1,0 +1,3 @@
+Speaker A: Hello everyone, this is a sample transcript used for API upload testing.
+Speaker B: We covered project goals, blockers, and next steps.
+Speaker C: Action item one is to finalize CI checks before deployment.
