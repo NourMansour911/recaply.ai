@@ -25,14 +25,14 @@ TEST_SESSION_ID = "test_session"
 TEST_USER_ID = "test_user"
 
 
-class TestHomeResponseSchema(BaseModel):
+class HomeResponseSchema(BaseModel):
     app_name: str
     version: str
     status: str
     timestamp: str
 
 
-class TestChatResponseSchema(BaseModel):
+class ChatResponseSchema(BaseModel):
     answer: str
     tenant_id: str
     project_id: str
@@ -103,7 +103,7 @@ def test_health_check_root_endpoint():
     response = client.get("/")
 
     assert response.status_code == 200
-    data = TestHomeResponseSchema.model_validate(response.json())
+    data = HomeResponseSchema.model_validate(response.json())
     assert data.app_name == "test_recaply"
     assert data.version == "test_0.0.0"
     assert data.status == "running"
@@ -119,7 +119,7 @@ def test_workspace_chat_endpoint_response_structure():
     )
 
     assert response.status_code == 200
-    data = TestChatResponseSchema.model_validate(response.json())
+    data = ChatResponseSchema.model_validate(response.json())
     assert data.answer == "echo: test_hello"
     assert data.tenant_id == TEST_TENANT_ID
     assert data.project_id == TEST_PROJECT_ID
