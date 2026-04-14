@@ -3,7 +3,7 @@
 
 A production-grade FastAPI backend for ingesting, indexing, and analyzing meeting files with retrieval-augmented AI chat and structured meeting report generation.
 
-Built with clean architecture, dependency injection, custom provider abstractions, and sophisticated retrieval-augmented generation pipelines.
+Built with clean architecture, dependency injection, custom provider abstractions, Redis-backed chat memory, and sophisticated retrieval-augmented generation pipelines.
 
 ---
 
@@ -15,10 +15,64 @@ Built with clean architecture, dependency injection, custom provider abstraction
 | **Key Innovation** | Citation system links every AI answer/insight back to exact meeting segment with timestamps |
 | **Architecture** | Layered FastAPI with dependency injection, custom providers, singleton patterns |
 | **AI Pipeline** | Query rewriting + multi-method retrieval + reranking + citation-aware generation |
+| **Tech Stack** | FastAPI, Python, Pydantic, MongoDB, Redis, Qdrant, Whisper, Cohere, LangChain, Docker |
+| **State & Memory** | MongoDB for project/file metadata and Redis for chat memory and short-lived session state |
 | **CI & Delivery** | Docker containerized, GitHub Actions CI, test-gated image build and push to Docker Hub |
 
 Docker Hub Repository: [https://hub.docker.com/r/nourmansour41/recaply](https://hub.docker.com/r/nourmansour41/recaply)
 ---
+
+## The Problem Recaply Solves
+
+Most teams already have meeting content, but they do not have a reliable way to turn that content into searchable institutional memory.
+
+The usual pain points are:
+
+- meeting transcripts are long and hard to search quickly
+- important decisions get buried in raw audio or text
+- answers need evidence, not just a summary
+- recap work is repetitive and manual
+- different file types live in different tools, so context gets fragmented
+
+Recaply solves this by turning meeting files into a cited, searchable knowledge layer with timestamps, structured outputs, and workspace-level memory.
+
+## Why It Is Different
+
+Recaply is not just another meeting summarizer.
+
+It is designed as a meeting intelligence platform, which means it focuses on three things most tools miss:
+
+1. **Traceability** - every answer and insight points back to exact source segments.
+2. **Retrievability** - the system combines query rewriting, hybrid search, fusion, and reranking instead of relying on one weak search step.
+3. **Business usefulness** - it produces decisions, tasks, risks, sentiment, and summary artifacts that can actually be used by teams.
+
+That makes it closer to an evidence-backed operations layer for meetings than a generic chatbot.
+
+## Feature Set
+
+- upload audio, transcript, subtitle, and PDF meeting files
+- normalize files into timestamped segments
+- build workspace-level searchable memory
+- run cited natural-language chat over meeting content
+- generate structured reports for decisions, tasks, risks, conflicts, sentiment, and summary
+- support hybrid retrieval across semantic and keyword signals
+- rerank retrieval results before generation
+- keep short-term chat memory in Redis
+- persist projects and files in MongoDB
+- expose observability through logs, metrics, and tracing
+
+## Tech Stack
+
+| Layer | Technologies |
+|------|--------------|
+| **API** | FastAPI, Uvicorn, Python 3.11, Pydantic |
+| **Persistence** | MongoDB for metadata and project storage |
+| **Memory** | Redis for chat memory and session state |
+| **Vector Search** | Qdrant in the default compose stack |
+| **AI / NLP** | Whisper, LangChain, OpenAI-compatible providers, Cohere reranking |
+| **Media Processing** | FFmpeg |
+| **Delivery** | Docker, Docker Compose, GitHub Actions |
+| **Observability** | Prometheus, Grafana, LangSmith, structured logging |
 
 ## Part II: Business Overview
 
@@ -49,7 +103,7 @@ Recaply is an AI meeting intelligence platform designed for teams that handle ma
 
 ---
 
-## Part II: System Architecture
+## Part III: System Architecture
 
 ### High-Level Design
 
@@ -87,7 +141,7 @@ For detailed architecture breakdown, see [src/README.md](src/README.md).
 
 ---
 
-## Part III: How Meeting Data Flows Through the System
+## Part IV: How Meeting Data Flows Through the System
 
 ### Phase 1: Upload & Ingestion
 
@@ -143,7 +197,7 @@ For retrieval implementation details, see [src/README.md](src/README.md) § 7.
 
 ---
 
-## Part IV: Services Explained
+## Part V: Services Explained
 
 The system is composed of focused, reusable services:
 
@@ -162,7 +216,7 @@ See [src/README.md](src/README.md) § 5 for detailed service responsibilities.
 
 ---
 
-## Part V: Engineering Strengths
+## Part VI: Engineering Strengths
 
 ### From a Product/Business Perspective
 
@@ -194,7 +248,7 @@ For in-depth code review notes, see [src/README.md](src/README.md).
 
 ---
 
-## Part VI: Development Workflow
+## Part VII: Development Workflow
 
 ### Local Development
 
@@ -233,7 +287,7 @@ For test details, see [.github/workflows/README.md](.github/workflows/README.md)
 
 ---
 
-## Part VII: CI & Operations
+## Part VIII: CI & Operations
 
 ### Docker Containerization
 
@@ -275,7 +329,7 @@ See [docker/README.md](docker/README.md) for:
 
 ---
 
-## Part VIII: Quick Reference
+## Part IX: Quick Reference
 
 | Task | Command |
 |------|---------|
@@ -289,7 +343,7 @@ See [docker/README.md](docker/README.md) for:
 
 ---
 
-## Part IX: Next Steps for Code Review / Evaluation
+## Part X: Next Steps for Code Review / Evaluation
 
 1. **Understand the architecture** → Read [src/README.md](src/README.md) § 2–5
 2. **Review the upload pipeline** → See [src/README.md](src/README.md) § 7 (most complex flow)
