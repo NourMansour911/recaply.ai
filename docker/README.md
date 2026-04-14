@@ -1,6 +1,6 @@
 # Docker Setup for Recaply API
 
-This directory contains the Docker setup for Recaply, including the API, reverse proxy, data stores, and monitoring stack.
+This directory contains the Docker setup for Recaply, including the API, reverse proxy, data stores, and monitoring stack. The API image build is now optimized with a multi-stage Dockerfile.
 
 ## Services Overview
 
@@ -60,6 +60,11 @@ Run from project root:
 ```bash
 docker compose -f docker/docker-compose.yml up --build -d
 ```
+
+Build note:
+- The API image is built with a multi-stage Dockerfile (`docker/api/Dockerfile`) to keep runtime images smaller.
+- Build toolchains remain in the builder stage and are not copied to runtime.
+- Torch is installed from the CPU wheel index during image build to avoid CUDA-heavy layers.
 
 Or run from inside `docker/`:
 
@@ -185,6 +190,12 @@ The API container runs from code copied at build time. After source changes, reb
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build api
+```
+
+Direct image build command:
+
+```bash
+docker build -f docker/api/Dockerfile -t recaply:local .
 ```
 
 ## Troubleshooting

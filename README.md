@@ -15,7 +15,7 @@ Built with clean architecture, dependency injection, custom provider abstraction
 | **Key Innovation** | Citation system links every AI answer/insight back to exact meeting segment with timestamps |
 | **Architecture** | Layered FastAPI with dependency injection, custom providers, singleton patterns |
 | **AI Pipeline** | Query rewriting + multi-method retrieval + reranking + citation-aware generation |
-| **Continuous Delivery** | Docker containerized, GitHub Actions CI/CD, test-gated pipeline, artifact-based image promotion |
+| **CI & Delivery** | Docker containerized, GitHub Actions CI, test-gated image build and push to Docker Hub |
 
 Docker Hub Repository: [https://hub.docker.com/r/nourmansour41/recaply](https://hub.docker.com/r/nourmansour41/recaply)
 ---
@@ -189,7 +189,7 @@ For in-depth code review notes, see [src/README.md](src/README.md).
 ✓ **Async/Await** → Efficient I/O handling for external APIs  
 ✓ **Containerized** → Docker image with all system dependencies baked in  
 ✓ **Full-Stack Monitoring** → Prometheus + Grafana for metrics, logs, traces  
-✓ **Test-Gated Pipeline** → CI/CD fails fast if tests fail  
+✓ **Test-Gated Pipeline** → CI fails fast if tests fail before image publish  
 ✓ **Multi-Environment Ready** → Docker Compose with MongoDB, Qdrant, Redis  
 
 ---
@@ -222,46 +222,47 @@ Tests include:
 
 Test setup is handled in [tests/conftest.py](tests/conftest.py), which provides the required import path and environment values before the app is imported.
 
-For test details, see [.github/README.md](.github/README.md).
+For test details, see [.github/workflows/README.md](.github/workflows/README.md).
 
 ### Code Structure
 
 - `src/` → Backend code (see [src/README.md](src/README.md))
 - `tests/` → API test suite
 - `docker/` → Containerization and compose stack (see [docker/README.md](docker/README.md))
-- `.github/workflows/` → separate CI and CD workflows (see [.github/README.md](.github/README.md))
+- `.github/workflows/` → CI workflow and pipeline docs (see [.github/workflows/README.md](.github/workflows/README.md))
 
 ---
 
-## Part VII: Continuous Delivery & Operations
+## Part VII: CI & Operations
 
 ### Docker Containerization
 
-The API is containerized with all system dependencies (Python 3.11, FFmpeg, system libs for text/media processing).
+The API is containerized with a multi-stage Docker build (`docker/api/Dockerfile`) to reduce runtime image size.
+
+Current build highlights:
+- Builder and runtime stages are separated to keep toolchains out of runtime.
+- Runtime is based on slim Python image for lower footprint.
+- Torch is installed from CPU wheels during build to avoid CUDA-heavy layers.
 
 For local development with full stack (MongoDB, Qdrant, Redis, Prometheus, Grafana), see [docker/README.md](docker/README.md).
 
-### CI/CD Pipeline
+### CI Pipeline
 
-The repository now uses two workflows:
+The repository currently uses a single workflow:
 
 1. [ci.yml](.github/workflows/ci.yml)
     - runs on push, pull request, and manual dispatch
-    - installs dependencies
+    - installs dependencies and uses pip cache
     - runs Ruff linting and pytest
-    - on `main`, builds the Docker image and uploads it as an artifact
-
-2. [cd.yml](.github/workflows/cd.yml)
-    - runs after CI succeeds on `main`
-    - downloads the image artifact from CI
-    - loads the image locally
-    - logs in to Docker Hub
-    - tags and pushes the image
+    - on push, can skip build/push with `[no build]` in commit message
+    - builds Docker image locally
+    - runs smoke test container before publish
+    - pushes tags to Docker Hub (`sha`, `latest` on `main`, and git tags)
 
 **Setup required:**
 - GitHub Secrets: `DOCKER_USERNAME`, `DOCKER_PASSWORD` (Docker Hub access token)
 
-For full CI/CD details, see [.github/README.md](.github/README.md).
+For full workflow details, see [.github/workflows/README.md](.github/workflows/README.md).
 
 ### Full Stack Deployment
 
@@ -294,7 +295,7 @@ See [docker/README.md](docker/README.md) for:
 2. **Review the upload pipeline** → See [src/README.md](src/README.md) § 7 (most complex flow)
 3. **Understand retrieval** → See [src/README.md](src/README.md) § 7 and `src/services/chat/`
 4. **Review tests** → See `tests/test_api.py`
-5. **Check deployment** → See [docker/README.md](docker/README.md) and [.github/README.md](.github/README.md)
+5. **Check runtime and CI** → See [docker/README.md](docker/README.md) and [.github/workflows/README.md](.github/workflows/README.md)
 
 ---
 
@@ -302,7 +303,7 @@ See [docker/README.md](docker/README.md) for:
 
 - **Backend Architecture**: [src/README.md](src/README.md)
 - **Docker & Full Stack**: [docker/README.md](docker/README.md)
-- **CI/CD & Tests**: [.github/README.md](.github/README.md)
+- **CI & Tests**: [.github/workflows/README.md](.github/workflows/README.md)
 - **Project Requirements**: `requirements.txt`
 
 ---
