@@ -4,16 +4,16 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
-from src.core import get_settings
-from src.orchestrators import (
+from core import get_settings
+from orchestrators import (
     get_chains_orchestrator,
     get_chat_orchestrator,
     get_upload_orchestrator,
 )
-from src.routers.home_router import home_route
-from src.routers.workspace_router import workspace_route
-from src.schemas.chains_schemas import ChainsResponse
-from src.schemas.files_schemas import UploadFilesResponse
+from routers.home_router import home_route
+from routers.workspace_router import workspace_route
+from schemas.chains_schemas import ChainsResponse
+from schemas.files_schemas import UploadFilesResponse
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
