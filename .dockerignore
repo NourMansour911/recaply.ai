@@ -3,6 +3,25 @@
 src/.env
 __pycache__
 *.pyc
+*.pyo
+*.pyd
+*.log
 .git
+.github
 .venv
+venv
 node_modules
+
+# Python tooling/cache
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Local runtime/output artifacts
+storage/
+dist/
+build/
+
+# Docs and tests are not needed for runtime image
+tests/
+docker/
